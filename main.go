@@ -1,18 +1,37 @@
 package main
 
 import (
-	"log"
-	 "net/http"
+	"crypto/tls"
+	"net"
 
-	"github.com/gorilla/mux"
-	proghttp "github.com/travisjeffery/proglog/http"
+	grpclog "github.com/travisjeffery/proglog/internal/grpc"
+	"github.com/travisjeffery/proglog/internal/log"
+	"golang.org/x/crypto/acme/autocert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+)
+
+var (
+	host     = ""
+	cacheDir = ""
 )
 
 func main() {
-	srv := proghttp.NewServer()
-	r := mux.NewRouter()
-	r.HandleFunc("/", srv.Produce).Methods("POST")
-	r.HandleFunc("/", srv.Consume).Methods("GET")
-	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	m := autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		Cache:      autocert.DirCache(cacheDir),
+		HostPolicy: autocert.HostWhitelist(host),
+	}
+	tls := &tls.Config{GetCertificate: m.GetCertificate}
+	creds := credentials.NewTLS(tls)
+
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		panic(err)
+	}
+
+	log := &log.Log{}
+	srv := grpclog.NewAPI(log, grpc.Creds(creds))
+
+	srv.Serve(lis)
 }

@@ -10,6 +10,7 @@ import (
 	api "github.com/travisjeffery/proglog/api/v1"
 	"github.com/travisjeffery/proglog/internal/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func TestServer(t *testing.T) {
@@ -23,7 +24,7 @@ func TestServer(t *testing.T) {
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 
-			cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
+			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")))
 			check(t, err)
 			defer cc.Close()
 

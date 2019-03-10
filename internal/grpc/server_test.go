@@ -54,8 +54,9 @@ func testConsumeEmpty(t *testing.T, srv *grpc.Server, client api.LogClient) {
 	if consume != nil {
 		t.Fatalf("got consume: %v, want: nil", consume)
 	}
-	if grpc.Code(err) != grpc.Code(api.ErrOffsetOutOfRange) {
-		t.Fatalf("got err: %v, want: %v", err, api.ErrOffsetOutOfRange)
+	got, want := grpc.Code(err), grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	if got != want {
+		t.Fatalf("got code: %v, want: %v, err: %v", got, want, err)
 	}
 }
 
@@ -98,8 +99,9 @@ func testConsumePastBoundary(t *testing.T, srv *grpc.Server, client api.LogClien
 	if consume != nil {
 		t.Fatal("consume not nil")
 	}
-	if grpc.Code(err) != grpc.Code(api.ErrOffsetOutOfRange) {
-		t.Fatalf("got err: %v, want: %v", err, api.ErrOffsetOutOfRange)
+	got, want := grpc.Code(err), grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	if got != want {
+		t.Fatalf("got err: %v, want: %v", got, want)
 	}
 }
 
@@ -120,11 +122,16 @@ func testProduceConsumeStream(t *testing.T, srv *grpc.Server, client api.LogClie
 		stream, err := client.ProduceStream(ctx)
 		check(t, err)
 
-		for _, batch := range batches {
+		for offset, batch := range batches {
 			err = stream.Send(&api.ProduceRequest{
 				RecordBatch: batch,
 			})
 			check(t, err)
+			res, err := stream.Recv()
+			check(t, err)
+			if res.FirstOffset != uint64(offset) {
+				t.Fatalf("got offset: %d, want: %d", res.FirstOffset, offset)
+			}
 		}
 
 	}

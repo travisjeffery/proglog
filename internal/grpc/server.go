@@ -31,6 +31,7 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 	if err != nil {
 		return nil, err
 	}
+
 	return &api.ProduceResponse{FirstOffset: offset}, nil
 }
 

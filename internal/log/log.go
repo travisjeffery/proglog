@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"sync"
 
 	api "github.com/travisjeffery/proglog/api/v1"
@@ -43,8 +42,7 @@ func (l *Log) ReadBatch(offset uint64) (*api.RecordBatch, error) {
 	l.init()
 	if l.activeSegment.nextOffset == 0 ||
 		l.activeSegment.nextOffset <= offset {
-		fmt.Println("heyheyhey")
-		return nil, api.ErrOffsetOutOfRange
+		return nil, api.ErrOffsetOutOfRange{Offset: offset}
 	}
 	entry, err := l.activeSegment.index.readEntry(offset)
 	if err != nil {

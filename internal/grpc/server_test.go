@@ -13,6 +13,11 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+var (
+	crt = "testdata/cert.pem"
+	key = "testdata/key.pem"
+)
+
 func TestServer(t *testing.T) {
 	for scenario, fn := range map[string]func(t *testing.T, srv *grpc.Server, client api.LogClient){
 		"consume empty log fails":                             testConsumeEmpty,
@@ -28,10 +33,14 @@ func TestServer(t *testing.T) {
 			check(t, err)
 			defer cc.Close()
 
+			tls, err := credentials.NewServerTLSFromFile(crt, key)
+			check(t, err)
+			creds := grpc.Creds(tls)
+
 			dir, err := ioutil.TempDir("", "server-test")
 			check(t, err)
 
-			srv := NewAPI(&log.Log{Dir: dir})
+			srv := NewAPI(&log.Log{Dir: dir}, creds)
 
 			go func() {
 				srv.Serve(l)

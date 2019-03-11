@@ -2,25 +2,15 @@ package grpc
 
 import (
 	"context"
-	"crypto/tls"
 
 	api "github.com/travisjeffery/proglog/api/v1"
-	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 var _ api.LogServer = (*grpcServer)(nil)
 
 func NewAPI(log logger, opts ...grpc.ServerOption) *grpc.Server {
-	m := autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache("/tmp/proglog/certs"),
-		HostPolicy: nil,
-	}
-	tls := &tls.Config{GetCertificate: m.GetCertificate}
-	creds := credentials.NewTLS(tls)
-	gsrv := grpc.NewServer(grpc.Creds(creds))
+	gsrv := grpc.NewServer(opts...)
 	srv := newgrpcServer(log)
 	api.RegisterLogServer(gsrv, srv)
 	return gsrv

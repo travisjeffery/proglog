@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	crt = "testdata/cert.pem"
-	key = "testdata/key.pem"
+	crt = "testdata/server.crt"
+	key = "testdata/server.key"
 )
 
 func TestServer(t *testing.T) {

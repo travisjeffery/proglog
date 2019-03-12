@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -x
+set -e
+
+# Generate the CA's private key and certificate
+cfssl print-defaults csr | cfssl gencert -initca - | cfssljson -bare ca
+
+# Generate a certificate for the server
+echo '{}' | cfssl gencert -ca=ca.pem -ca-key=ca-key.pem \
+    -hostname="localhost,127.0.0.1" - | cfssljson -bare server

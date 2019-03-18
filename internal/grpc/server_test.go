@@ -2,8 +2,12 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"io/ioutil"
 	"net"
+	"os/user"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -14,8 +18,9 @@ import (
 )
 
 var (
-	crt = "testdata/server.crt"
-	key = "testdata/server.key"
+	caCrt     = configFile("ca.pem")
+	serverCrt = configFile("server.pem")
+	serverKey = configFile("server-key.pem")
 )
 
 func TestServer(t *testing.T) {
@@ -29,18 +34,29 @@ func TestServer(t *testing.T) {
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 
-			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")))
+			rawCACert, err := ioutil.ReadFile(caCrt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(rawCACert)
+
+			ccreds := credentials.NewTLS(&tls.Config{
+				RootCAs: caCertPool,
+			})
+
+			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(ccreds))
 			check(t, err)
 			defer cc.Close()
 
-			tls, err := credentials.NewServerTLSFromFile(crt, key)
+			tls, err := credentials.NewServerTLSFromFile(serverCrt, serverKey)
 			check(t, err)
-			creds := grpc.Creds(tls)
+			screds := grpc.Creds(tls)
 
 			dir, err := ioutil.TempDir("", "server-test")
 			check(t, err)
 
-			srv := NewAPI(&log.Log{Dir: dir}, creds)
+			srv := NewAPI(&log.Log{Dir: dir}, screds)
 
 			go func() {
 				srv.Serve(l)
@@ -170,4 +186,12 @@ func equal(t *testing.T, got, want interface{}) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got: %v, want %v", got, want)
 	}
+}
+
+func configFile(filename string) string {
+	u, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Join(u.HomeDir, ".proglog", filename)
 }

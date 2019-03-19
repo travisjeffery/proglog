@@ -29,28 +29,35 @@ func TestServer(t *testing.T) {
 			check(t, err)
 
 			rawCACert, err := ioutil.ReadFile(caCrt)
-			if err != nil {
-				t.Fatal(err)
-			}
+			check(t, err)
 			caCertPool := x509.NewCertPool()
 			caCertPool.AppendCertsFromPEM(rawCACert)
 
-			ccreds := credentials.NewTLS(&tls.Config{
-				RootCAs: caCertPool,
+			clientCrt, err := tls.LoadX509KeyPair(clientCrt, clientKey)
+			check(t, err)
+
+			tlsCreds := credentials.NewTLS(&tls.Config{
+				Certificates: []tls.Certificate{clientCrt},
+				RootCAs:      caCertPool,
 			})
 
-			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(ccreds))
+			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(tlsCreds))
 			check(t, err)
 			defer cc.Close()
 
-			tls, err := credentials.NewServerTLSFromFile(serverCrt, serverKey)
+			serverCrt, err := tls.LoadX509KeyPair(serverCrt, serverKey)
 			check(t, err)
-			screds := grpc.Creds(tls)
+
+			tlsCreds = credentials.NewTLS(&tls.Config{
+				Certificates: []tls.Certificate{serverCrt},
+				ClientAuth:   tls.RequireAndVerifyClientCert,
+				ClientCAs:    caCertPool,
+			})
 
 			dir, err := ioutil.TempDir("", "server-test")
 			check(t, err)
 
-			srv := NewAPI(&log.Log{Dir: dir}, screds)
+			srv := NewAPI(&log.Log{Dir: dir}, grpc.Creds(tlsCreds))
 
 			go func() {
 				srv.Serve(l)
@@ -186,6 +193,8 @@ var (
 	caCrt     = configFile("ca.pem")
 	serverCrt = configFile("server.pem")
 	serverKey = configFile("server-key.pem")
+	clientCrt = configFile("client.pem")
+	clientKey = configFile("client-key.pem")
 )
 
 func configFile(filename string) string {

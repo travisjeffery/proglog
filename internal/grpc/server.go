@@ -2,14 +2,24 @@ package grpc
 
 import (
 	"context"
+	"log"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	api "github.com/travisjeffery/proglog/api/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 )
 
 var _ api.LogServer = (*grpcServer)(nil)
 
 func NewAPI(log logger, opts ...grpc.ServerOption) *grpc.Server {
+	opts = append(opts, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+		grpc_auth.StreamServerInterceptor(auth),
+	)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+		grpc_auth.UnaryServerInterceptor(auth),
+	)))
 	gsrv := grpc.NewServer(opts...)
 	srv := newgrpcServer(log)
 	api.RegisterLogServer(gsrv, srv)
@@ -75,4 +85,15 @@ func (s *grpcServer) ProduceStream(stream api.Log_ProduceStreamServer) error {
 type logger interface {
 	AppendBatch(*api.RecordBatch) (uint64, error)
 	ReadBatch(uint64) (*api.RecordBatch, error)
+}
+
+func auth(ctx context.Context) (context.Context, error) {
+	peer, ok := peer.FromContext(ctx)
+	if ok {
+		tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
+		addr := peer.Addr.String()
+		username := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
+		log.Printf("auth: %s: %s", addr, username)
+	}
+	return ctx, nil
 }

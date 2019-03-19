@@ -1,6 +1,3 @@
-test:
-	go test ./...
-
 CONFIG_PATH=${HOME}/.proglog/
 
 init:
@@ -25,3 +22,6 @@ gencert:
 		configs/certs/client-csr.json | cfssljson -bare client
 
 	mv *.pem *.csr ${CONFIG_PATH}
+
+test:
+	go test ./...

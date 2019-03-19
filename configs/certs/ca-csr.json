@@ -1,5 +1,5 @@
 {
-    "CN": "My CA",
+    "CN": "My Awesome CA",
     "key": {
         "algo": "rsa",
         "size": 2048
@@ -9,8 +9,8 @@
             "C": "CA",
             "L": "ON",
             "ST": "Toronto",
-            "O": "My Company",
-            "OU": "Distributed services"
+            "O": "My Awesome Company",
+            "OU": "CA Services"
         }
     ]
 }

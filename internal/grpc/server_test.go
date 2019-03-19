@@ -17,12 +17,6 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-var (
-	caCrt     = configFile("ca.pem")
-	serverCrt = configFile("server.pem")
-	serverKey = configFile("server-key.pem")
-)
-
 func TestServer(t *testing.T) {
 	for scenario, fn := range map[string]func(t *testing.T, srv *grpc.Server, client api.LogClient){
 		"consume empty log fails":                             testConsumeEmpty,
@@ -187,6 +181,12 @@ func equal(t *testing.T, got, want interface{}) {
 		t.Fatalf("got: %v, want %v", got, want)
 	}
 }
+
+var (
+	caCrt     = configFile("ca.pem")
+	serverCrt = configFile("server.pem")
+	serverKey = configFile("server-key.pem")
+)
 
 func configFile(filename string) string {
 	u, err := user.Current()

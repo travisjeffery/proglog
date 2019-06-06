@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"flag"
 	"net"
 
 	grpclog "github.com/travisjeffery/proglog/internal/grpc"
@@ -11,7 +12,10 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-var ()
+var (
+	serfAdvertiseAddr = flag.String("serf_advertise_addr", "", "Address that this server's serf instance listens on.")
+	logAPIAddr        = flag.String("api_addr", "", "Address that this server's log api listens on.")
+)
 
 func main() {
 	lis, err := net.Listen("tcp", ":0")

@@ -1,4 +1,4 @@
-package grpc
+package proglog
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	api "github.com/travisjeffery/proglog/api/v1"
-	"github.com/travisjeffery/proglog/internal/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -57,7 +56,7 @@ func TestServer(t *testing.T) {
 			dir, err := ioutil.TempDir("", "server-test")
 			check(t, err)
 
-			srv := NewAPI(&log.Log{Dir: dir}, grpc.Creds(tlsCreds))
+			srv := NewAPI(&Log{Dir: dir}, grpc.Creds(tlsCreds))
 
 			go func() {
 				srv.Serve(l)

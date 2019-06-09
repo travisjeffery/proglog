@@ -56,7 +56,11 @@ func TestServer(t *testing.T) {
 			dir, err := ioutil.TempDir("", "server-test")
 			check(t, err)
 
-			srv := NewAPI(&Log{Dir: dir}, grpc.Creds(tlsCreds))
+			config := &Config{
+				CommitLog: &Log{Dir: dir},
+			}
+			srv, err := NewAPI(config, grpc.Creds(tlsCreds))
+			check(t, err)
 
 			go func() {
 				srv.Serve(l)

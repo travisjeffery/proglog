@@ -2,10 +2,9 @@ package proglog
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"io/ioutil"
+	"io"
 	"log"
+	"os"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -23,6 +22,8 @@ type Config struct {
 	SerfConfig *serf.Config
 	TLSConfig  *TLSConfig
 	RPCAddr    string
+	LogOutput  io.Writer
+	CommitLog  CommitLog
 }
 
 type TLSConfig struct {
@@ -30,14 +31,14 @@ type TLSConfig struct {
 	ClientCert, ClientKey string
 }
 
-func NewAPI(log logger, opts ...grpc.ServerOption) (*grpc.Server, error) {
+func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
 	opts = append(opts, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 		grpc_auth.StreamServerInterceptor(auth),
 	)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		grpc_auth.UnaryServerInterceptor(auth),
 	)))
 	gsrv := grpc.NewServer(opts...)
-	srv, err := newgrpcServer(log)
+	srv, err := newgrpcServer(config)
 	if err != nil {
 		return nil, err
 	}
@@ -45,15 +46,16 @@ func NewAPI(log logger, opts ...grpc.ServerOption) (*grpc.Server, error) {
 	return gsrv, nil
 }
 
-func newgrpcServer(log logger) (srv *grpcServer, err error) {
+func newgrpcServer(config *Config) (srv *grpcServer, err error) {
+	if config.LogOutput == nil {
+		config.LogOutput = os.Stderr
+	}
 	srv = &grpcServer{
-		log: log,
+		config:    config,
+		commitlog: config.CommitLog,
+		logger:    log.New(config.LogOutput, "", log.LstdFlags),
 	}
-	err = srv.setupSerf()
-	if err != nil {
-		return nil, err
-	}
-	err = srv.setupTLS()
+	err = srv.setupSerf(config.SerfConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -61,20 +63,24 @@ func newgrpcServer(log logger) (srv *grpcServer, err error) {
 }
 
 type grpcServer struct {
-	Config   *Config
-	log      logger
-	serf     *serf.Serf
-	events   chan serf.Event
-	tlsCreds credentials.TransportCredentials
+	config    *Config
+	commitlog CommitLog
+	logger    *log.Logger
+	serf      *serf.Serf
+	events    chan serf.Event
+	tlsCreds  credentials.TransportCredentials
 }
 
-func (s *grpcServer) setupSerf() (err error) {
-	conf := s.Config.SerfConfig
-	conf.Init()
-	conf.Tags[rpcAddrKey] = s.Config.RPCAddr
+func (s *grpcServer) setupSerf(config *serf.Config) (err error) {
+	// if serf config is nil don't setup the serf instance
+	if config == nil {
+		return nil
+	}
+	config.Init()
+	config.Tags[rpcAddrKey] = s.config.RPCAddr
 	s.events = make(chan serf.Event)
-	conf.EventCh = s.events
-	s.serf, err = serf.Create(conf)
+	config.EventCh = s.events
+	s.serf, err = serf.Create(config)
 	if err != nil {
 		return err
 	}
@@ -82,44 +88,26 @@ func (s *grpcServer) setupSerf() (err error) {
 	return nil
 }
 
-func (s *grpcServer) setupTLS() (err error) {
-	clientCrt, err := tls.LoadX509KeyPair(
-		s.Config.TLSConfig.ClientCert,
-		s.Config.TLSConfig.ClientKey,
-	)
-	if err != nil {
-		return err
-	}
-
-	rawCACert, err := ioutil.ReadFile(s.Config.TLSConfig.CACert)
-	if err != nil {
-		return err
-	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(rawCACert)
-
-	s.tlsCreds = credentials.NewTLS(&tls.Config{
-		Certificates: []tls.Certificate{clientCrt},
-		RootCAs:      caCertPool,
-	})
-
-	return nil
-}
-
 func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error) {
-	offset, err := s.log.AppendBatch(req.RecordBatch)
+	offset, err := s.commitlog.AppendBatch(req.RecordBatch)
 	if err != nil {
 		return nil, err
 	}
-	return &api.ProduceResponse{FirstOffset: offset}, s.replicateProduce(ctx, req)
+	res := &api.ProduceResponse{FirstOffset: offset}
+	if err = s.replicateProduce(ctx, req); err != nil {
+		return res, err
+	}
+	return res, nil
 }
 
 func (s *grpcServer) replicateProduce(ctx context.Context, req *api.ProduceRequest) error {
+	if s.serf == nil {
+		return nil
+	}
 	g, ctx := errgroup.WithContext(ctx)
 	for _, member := range s.serf.Members() {
 		server := decodeParts(member)
-		if server.rpcAddr == s.Config.RPCAddr {
+		if server.rpcAddr == s.config.RPCAddr {
 			// ignore the member of the current server
 			continue
 		}
@@ -146,7 +134,7 @@ func (s *grpcServer) replicateProduce(ctx context.Context, req *api.ProduceReque
 }
 
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api.ConsumeResponse, error) {
-	batch, err := s.log.ReadBatch(req.Offset)
+	batch, err := s.commitlog.ReadBatch(req.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +170,7 @@ func (s *grpcServer) ProduceStream(stream api.Log_ProduceStreamServer) error {
 	}
 }
 
-type logger interface {
+type CommitLog interface {
 	AppendBatch(*api.RecordBatch) (uint64, error)
 	ReadBatch(uint64) (*api.RecordBatch, error)
 }

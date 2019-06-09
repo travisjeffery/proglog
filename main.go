@@ -1,36 +1,49 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
+	"log"
 	"net"
 
-	grpclog "github.com/travisjeffery/proglog/internal/grpc"
-	"github.com/travisjeffery/proglog/internal/log"
-	"golang.org/x/crypto/acme/autocert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"github.com/hashicorp/serf/serf"
+	proglog "github.com/travisjeffery/proglog/internal"
 )
 
 var (
-	serfAdvertiseAddr = flag.String("serf_advertise_addr", "", "Address that this server's serf instance listens on.")
-	logAPIAddr        = flag.String("api_addr", "", "Address that this server's log api listens on.")
+	serfAddr   = flag.String("serf_addr", "", "Address that this server's serf instance listens on.")
+	logAPIAddr = flag.String("api_addr", ":0", "Address that this server's log api listens on.")
 )
 
 func main() {
-	lis, err := net.Listen("tcp", ":0")
+	flag.Parse()
+
+	lis, err := net.Listen("tcp", *logAPIAddr)
 	if err != nil {
 		panic(err)
 	}
-	log := &log.Log{}
-	m := autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache("/tmp/proglog/certs"),
-		HostPolicy: nil,
+
+	config := &proglog.Config{
+		Logger: &proglog.Log{},
 	}
-	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
-	tls := credentials.NewTLS(tlsConfig)
-	creds := grpc.Creds(tls)
-	srv := grpclog.NewAPI(log, creds)
-	srv.Serve(lis)
+
+	if *serfAddr != "" {
+		addr, err := net.ResolveTCPAddr("tcp", *serfAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		config.SerfConfig = serf.DefaultConfig()
+		config.SerfConfig.MemberlistConfig.BindPort = addr.Port
+		config.SerfConfig.MemberlistConfig.BindAddr = addr.IP.String()
+	}
+
+	srv, err := proglog.NewAPI(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = srv.Serve(lis)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }

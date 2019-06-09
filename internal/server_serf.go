@@ -32,7 +32,7 @@ type serverParts struct {
 }
 
 func decodeParts(m serf.Member) *serverParts {
-	parts := &serverParts{}
-	parts.rpcAddr = m.Tags[rpcAddrKey]
-	return parts
+	return &serverParts{
+		rpcAddr: m.Tags[rpcAddrKey],
+	}
 }

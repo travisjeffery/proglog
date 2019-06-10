@@ -2,15 +2,12 @@ package proglog
 
 import (
 	"context"
-	"io"
 	"log"
-	"os"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/hashicorp/serf/serf"
 	api "github.com/travisjeffery/proglog/api/v1"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
@@ -20,15 +17,15 @@ var _ api.LogServer = (*grpcServer)(nil)
 
 type Config struct {
 	SerfConfig *serf.Config
-	TLSConfig  *TLSConfig
-	RPCAddr    string
-	LogOutput  io.Writer
 	CommitLog  CommitLog
 }
 
-type TLSConfig struct {
-	CACert                string
-	ClientCert, ClientKey string
+type grpcServer struct {
+	config    *Config
+	commitlog CommitLog
+	logger    *log.Logger
+	serf      *serf.Serf
+	events    chan serf.Event
 }
 
 func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
@@ -47,13 +44,9 @@ func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
 }
 
 func newgrpcServer(config *Config) (srv *grpcServer, err error) {
-	if config.LogOutput == nil {
-		config.LogOutput = os.Stderr
-	}
 	srv = &grpcServer{
 		config:    config,
 		commitlog: config.CommitLog,
-		logger:    log.New(config.LogOutput, "", log.LstdFlags),
 	}
 	err = srv.setupSerf(config.SerfConfig)
 	if err != nil {
@@ -62,13 +55,15 @@ func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 	return srv, nil
 }
 
-type grpcServer struct {
-	config    *Config
-	commitlog CommitLog
-	logger    *log.Logger
-	serf      *serf.Serf
-	events    chan serf.Event
-	tlsCreds  credentials.TransportCredentials
+func (s *grpcServer) eventHandler() {
+	for e := range s.events {
+		switch e.EventType() {
+		case serf.EventMemberJoin:
+			log.Printf("node joined: %v", e)
+		case serf.EventMemberLeave, serf.EventMemberFailed:
+			log.Printf("node failed: %v", e)
+		}
+	}
 }
 
 func (s *grpcServer) setupSerf(config *serf.Config) (err error) {
@@ -77,7 +72,6 @@ func (s *grpcServer) setupSerf(config *serf.Config) (err error) {
 		return nil
 	}
 	config.Init()
-	config.Tags[rpcAddrKey] = s.config.RPCAddr
 	s.events = make(chan serf.Event)
 	config.EventCh = s.events
 	s.serf, err = serf.Create(config)
@@ -94,43 +88,7 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 		return nil, err
 	}
 	res := &api.ProduceResponse{FirstOffset: offset}
-	if err = s.replicateProduce(ctx, req); err != nil {
-		return res, err
-	}
 	return res, nil
-}
-
-func (s *grpcServer) replicateProduce(ctx context.Context, req *api.ProduceRequest) error {
-	if s.serf == nil {
-		return nil
-	}
-	g, ctx := errgroup.WithContext(ctx)
-	for _, member := range s.serf.Members() {
-		server := decodeParts(member)
-		if server.rpcAddr == s.config.RPCAddr {
-			// ignore the member of the current server
-			continue
-		}
-		g.Go(func() error {
-			// TODO(tj): optimize this
-
-			cc, err := grpc.Dial(server.rpcAddr, grpc.WithTransportCredentials(s.tlsCreds))
-			if err != nil {
-				return err
-			}
-			defer cc.Close()
-
-			client := api.NewLogClient(cc)
-
-			_, err = client.Produce(ctx, req)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-	}
-	return g.Wait()
 }
 
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api.ConsumeResponse, error) {

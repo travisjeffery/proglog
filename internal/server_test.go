@@ -17,67 +17,20 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	for scenario, fn := range map[string]func(t *testing.T, srv *grpc.Server, client api.LogClient){
+	for scenario, fn := range map[string]func(t *testing.T){
 		"consume empty log fails":                             testConsumeEmpty,
 		"produce/consume a message to/from the log succeeeds": testProduceConsume,
 		"consume past log boundary fails":                     testConsumePastBoundary,
 		"produce/consume stream succeeds":                     testProduceConsumeStream,
 	} {
-		t.Run(scenario, func(t *testing.T) {
-			l, err := net.Listen("tcp", "127.0.0.1:0")
-			check(t, err)
-
-			rawCACert, err := ioutil.ReadFile(caCrt)
-			check(t, err)
-			caCertPool := x509.NewCertPool()
-			caCertPool.AppendCertsFromPEM(rawCACert)
-
-			clientCrt, err := tls.LoadX509KeyPair(clientCrt, clientKey)
-			check(t, err)
-
-			tlsCreds := credentials.NewTLS(&tls.Config{
-				Certificates: []tls.Certificate{clientCrt},
-				RootCAs:      caCertPool,
-			})
-
-			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(tlsCreds))
-			check(t, err)
-			defer cc.Close()
-
-			serverCrt, err := tls.LoadX509KeyPair(serverCrt, serverKey)
-			check(t, err)
-
-			tlsCreds = credentials.NewTLS(&tls.Config{
-				Certificates: []tls.Certificate{serverCrt},
-				ClientAuth:   tls.RequireAndVerifyClientCert,
-				ClientCAs:    caCertPool,
-			})
-
-			dir, err := ioutil.TempDir("", "server-test")
-			check(t, err)
-
-			config := &Config{
-				CommitLog: &Log{Dir: dir},
-			}
-			srv, err := NewAPI(config, grpc.Creds(tlsCreds))
-			check(t, err)
-
-			go func() {
-				srv.Serve(l)
-			}()
-			defer func() {
-				srv.Stop()
-				l.Close()
-			}()
-
-			client := api.NewLogClient(cc)
-
-			fn(t, srv, client)
-		})
+		t.Run(scenario, func(t *testing.T) { fn(t) })
 	}
 }
 
-func testConsumeEmpty(t *testing.T, srv *grpc.Server, client api.LogClient) {
+func testConsumeEmpty(t *testing.T) {
+	client, _, teardown := testSetup(t)
+	defer teardown()
+
 	consume, err := client.Consume(context.Background(), &api.ConsumeRequest{
 		Offset: 0,
 	})
@@ -90,8 +43,10 @@ func testConsumeEmpty(t *testing.T, srv *grpc.Server, client api.LogClient) {
 	}
 }
 
-func testProduceConsume(t *testing.T, srv *grpc.Server, client api.LogClient) {
+func testProduceConsume(t *testing.T) {
+	client, _, teardown := testSetup(t)
 	ctx := context.Background()
+	defer teardown()
 
 	want := &api.RecordBatch{
 		Records: []*api.Record{{
@@ -111,8 +66,10 @@ func testProduceConsume(t *testing.T, srv *grpc.Server, client api.LogClient) {
 	equal(t, consume.RecordBatch, want)
 }
 
-func testConsumePastBoundary(t *testing.T, srv *grpc.Server, client api.LogClient) {
+func testConsumePastBoundary(t *testing.T) {
+	client, _, teardown := testSetup(t)
 	ctx := context.Background()
+	defer teardown()
 
 	produce, err := client.Produce(ctx, &api.ProduceRequest{
 		RecordBatch: &api.RecordBatch{
@@ -135,8 +92,10 @@ func testConsumePastBoundary(t *testing.T, srv *grpc.Server, client api.LogClien
 	}
 }
 
-func testProduceConsumeStream(t *testing.T, srv *grpc.Server, client api.LogClient) {
+func testProduceConsumeStream(t *testing.T) {
+	client, _, teardown := testSetup(t)
 	ctx := context.Background()
+	defer teardown()
 
 	batches := []*api.RecordBatch{{
 		Records: []*api.Record{{
@@ -175,6 +134,57 @@ func testProduceConsumeStream(t *testing.T, srv *grpc.Server, client api.LogClie
 			check(t, err)
 			equal(t, res.RecordBatch, batch)
 		}
+	}
+}
+
+func testSetup(t *testing.T) (api.LogClient, *grpc.Server, func()) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	check(t, err)
+
+	rawCACert, err := ioutil.ReadFile(caCrt)
+	check(t, err)
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(rawCACert)
+
+	clientCrt, err := tls.LoadX509KeyPair(clientCrt, clientKey)
+	check(t, err)
+
+	tlsCreds := credentials.NewTLS(&tls.Config{
+		Certificates: []tls.Certificate{clientCrt},
+		RootCAs:      caCertPool,
+	})
+
+	cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(tlsCreds))
+	check(t, err)
+
+	serverCrt, err := tls.LoadX509KeyPair(serverCrt, serverKey)
+	check(t, err)
+
+	tlsCreds = credentials.NewTLS(&tls.Config{
+		Certificates: []tls.Certificate{serverCrt},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    caCertPool,
+	})
+
+	dir, err := ioutil.TempDir("", "server-test")
+	check(t, err)
+
+	config := &Config{
+		CommitLog: &Log{Dir: dir},
+	}
+	server, err := NewAPI(config, grpc.Creds(tlsCreds))
+	check(t, err)
+
+	go func() {
+		server.Serve(l)
+	}()
+
+	client := api.NewLogClient(cc)
+
+	return client, server, func() {
+		server.Stop()
+		cc.Close()
+		l.Close()
 	}
 }
 

@@ -23,7 +23,7 @@ func main() {
 	}
 
 	config := &proglog.Config{
-		Logger: &proglog.Log{},
+		CommitLog: &proglog.Log{},
 	}
 
 	if *serfAddr != "" {

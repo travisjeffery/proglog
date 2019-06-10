@@ -15,6 +15,7 @@ require (
 	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
 	google.golang.org/grpc v1.19.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 	upspin.io v0.0.0-20190213074607-15046f4f3b2a
 )

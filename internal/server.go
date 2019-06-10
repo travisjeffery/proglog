@@ -3,6 +3,7 @@ package proglog
 import (
 	"context"
 	"log"
+	"net"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -16,8 +17,9 @@ import (
 var _ api.LogServer = (*grpcServer)(nil)
 
 type Config struct {
-	SerfConfig *serf.Config
-	CommitLog  CommitLog
+	SerfBindAddr   *net.TCPAddr
+	StartJoinAddrs []string
+	CommitLog      CommitLog
 }
 
 type grpcServer struct {
@@ -48,7 +50,7 @@ func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 		config:    config,
 		commitlog: config.CommitLog,
 	}
-	err = srv.setupSerf(config.SerfConfig)
+	err = srv.setupSerf()
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +68,11 @@ func (s *grpcServer) eventHandler() {
 	}
 }
 
-func (s *grpcServer) setupSerf(config *serf.Config) (err error) {
-	// if serf config is nil don't setup the serf instance
-	if config == nil {
-		return nil
-	}
+func (s *grpcServer) setupSerf() (err error) {
+	config := serf.DefaultConfig()
 	config.Init()
+	config.MemberlistConfig.BindAddr = s.config.SerfBindAddr.IP.String()
+	config.MemberlistConfig.BindPort = s.config.SerfBindAddr.Port
 	s.events = make(chan serf.Event)
 	config.EventCh = s.events
 	s.serf, err = serf.Create(config)
@@ -79,6 +80,12 @@ func (s *grpcServer) setupSerf(config *serf.Config) (err error) {
 		return err
 	}
 	go s.eventHandler()
+	if s.config.StartJoinAddrs != nil {
+		_, err = s.serf.Join(s.config.StartJoinAddrs, true)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/travisjeffery/go-dynaport"
 	api "github.com/travisjeffery/proglog/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -28,7 +29,7 @@ func TestServer(t *testing.T) {
 }
 
 func testConsumeEmpty(t *testing.T) {
-	client, _, teardown := testSetup(t)
+	client, _, teardown := testSetup(t, nil)
 	defer teardown()
 
 	consume, err := client.Consume(context.Background(), &api.ConsumeRequest{
@@ -44,7 +45,7 @@ func testConsumeEmpty(t *testing.T) {
 }
 
 func testProduceConsume(t *testing.T) {
-	client, _, teardown := testSetup(t)
+	client, _, teardown := testSetup(t, nil)
 	ctx := context.Background()
 	defer teardown()
 
@@ -67,7 +68,7 @@ func testProduceConsume(t *testing.T) {
 }
 
 func testConsumePastBoundary(t *testing.T) {
-	client, _, teardown := testSetup(t)
+	client, _, teardown := testSetup(t, nil)
 	ctx := context.Background()
 	defer teardown()
 
@@ -93,7 +94,7 @@ func testConsumePastBoundary(t *testing.T) {
 }
 
 func testProduceConsumeStream(t *testing.T) {
-	client, _, teardown := testSetup(t)
+	client, _, teardown := testSetup(t, nil)
 	ctx := context.Background()
 	defer teardown()
 
@@ -137,8 +138,28 @@ func testProduceConsumeStream(t *testing.T) {
 	}
 }
 
-func testSetup(t *testing.T) (api.LogClient, *grpc.Server, func()) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+// func testJoin(t *testing.T) {
+// 	var addr1 *net.TCPAddr
+// 	_, server1, teardown1 := testSetup(t, func(config *Config) {
+// 		addr1 = config.SerfBindAddr
+// 	})
+// 	defer teardown1()
+
+// 	_, server2, teardown2 := testSetup(t, func(config *Config) {
+// 		config.StartJoinAddrs = []string{addr1.config.SerfBindAddr.String()}
+// 	})
+// 	defer teardown2()
+// }
+
+func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, func()) {
+	t.Helper()
+
+	ports := dynaport.Get(2)
+
+	rpcAddr := &net.TCPAddr{IP: []byte{127, 0, 0, 1}, Port: ports[0]}
+	serfAddr := &net.TCPAddr{IP: []byte{127, 0, 0, 1}, Port: ports[1]}
+
+	l, err := net.Listen("tcp", rpcAddr.String())
 	check(t, err)
 
 	rawCACert, err := ioutil.ReadFile(caCrt)
@@ -170,7 +191,11 @@ func testSetup(t *testing.T) (api.LogClient, *grpc.Server, func()) {
 	check(t, err)
 
 	config := &Config{
-		CommitLog: &Log{Dir: dir},
+		SerfBindAddr: serfAddr,
+		CommitLog:    &Log{Dir: dir},
+	}
+	if fn != nil {
+		fn(config)
 	}
 	server, err := NewAPI(config, grpc.Creds(tlsCreds))
 	check(t, err)

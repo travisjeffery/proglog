@@ -71,6 +71,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/travisjeffery/go-dynaport v0.0.0-20171218080632-f8768fb615d5 h1:YWS6vlR2944x27HYI+jyiNvCHBad0/Xz/+89AKsM4/I=
+github.com/travisjeffery/go-dynaport v0.0.0-20171218080632-f8768fb615d5/go.mod h1:0LHuDS4QAx+mAc4ri3WkQdavgVoBIZ7cE9ob17KIAJk=
 github.com/tysontate/gommap v0.0.0-20190103205956-899e1273fb5c h1:551Cm4YNqmckBc0maTSsNhcTZGhhbOlWDwBVMMlS2eA=
 github.com/tysontate/gommap v0.0.0-20190103205956-899e1273fb5c/go.mod h1:D/qzp3BypYxGri+RgzDSv3Fml0qkzA85BPPwrNNYbSs=
 golang.org/x/crypto v0.0.0-20181029021203-45a5f77698d3/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=

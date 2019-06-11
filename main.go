@@ -4,20 +4,21 @@ import (
 	"flag"
 	"log"
 	"net"
+	"strings"
 
-	"github.com/hashicorp/serf/serf"
 	proglog "github.com/travisjeffery/proglog/internal"
 )
 
 var (
-	serfAddr   = flag.String("serf_addr", "", "Address that this server's serf instance listens on.")
-	logAPIAddr = flag.String("api_addr", ":0", "Address that this server's log api listens on.")
+	serfAddrFlag       = flag.String("serf_addr", "", "Address that this server's serf instance listens on.")
+	startJoinAddrsFlag = flag.String("start_join_addrs", "", "Addresses (comma delimited) of existing Serf nodes to join.")
+	logAPIAddrFlag     = flag.String("api_addr", ":0", "Address that this server's log api listens on.")
 )
 
 func main() {
 	flag.Parse()
 
-	lis, err := net.Listen("tcp", *logAPIAddr)
+	ln, err := net.Listen("tcp", *logAPIAddrFlag)
 	if err != nil {
 		panic(err)
 	}
@@ -26,14 +27,16 @@ func main() {
 		CommitLog: &proglog.Log{},
 	}
 
-	if *serfAddr != "" {
-		addr, err := net.ResolveTCPAddr("tcp", *serfAddr)
+	if *serfAddrFlag != "" {
+		serfAddr, err := net.ResolveTCPAddr("tcp", *serfAddrFlag)
 		if err != nil {
 			log.Fatal(err)
 		}
-		config.SerfConfig = serf.DefaultConfig()
-		config.SerfConfig.MemberlistConfig.BindPort = addr.Port
-		config.SerfConfig.MemberlistConfig.BindAddr = addr.IP.String()
+		config.SerfBindAddr = serfAddr
+	}
+
+	if *startJoinAddrsFlag != "" {
+		config.StartJoinAddrs = strings.Split(*startJoinAddrsFlag, ",")
 	}
 
 	srv, err := proglog.NewAPI(config)
@@ -41,7 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = srv.Serve(lis)
+	err = srv.Serve(ln)
 	if err != nil {
 		log.Fatal(err)
 	}

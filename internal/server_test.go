@@ -175,7 +175,8 @@ func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, fun
 		RootCAs:      caCertPool,
 	})
 
-	cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(tlsCreds))
+	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
+	cc, err := grpc.Dial(l.Addr().String(), clientOptions...)
 	check(t, err)
 
 	serverCrt, err := tls.LoadX509KeyPair(serverCrt, serverKey)
@@ -191,8 +192,9 @@ func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, fun
 	check(t, err)
 
 	config := &Config{
-		SerfBindAddr: serfAddr,
-		CommitLog:    &Log{Dir: dir},
+		SerfBindAddr:  serfAddr,
+		CommitLog:     &Log{Dir: dir},
+		ClientOptions: clientOptions,
 	}
 	if fn != nil {
 		fn(config)

@@ -1,3 +1,5 @@
 .vscode
 certs/*.pem
 certs/*.csr
+vendor
+!vendor/modules.txt

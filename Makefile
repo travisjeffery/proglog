@@ -24,4 +24,12 @@ gencert:
 	mv *.pem *.csr ${CONFIG_PATH}
 
 test:
-	go test ./...
+	go test -race ./...
+
+
+compile:
+	protoc api/v1/*.proto \
+		--gogo_out=plugins=grpc:. \
+		--proto_path=. \
+		--proto_path=vendor \
+		--proto_path=vendor/github.com/gogo/protobuf/protobuf

@@ -9,14 +9,14 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/travisjeffery/go-dynaport v0.0.0-20171218080632-f8768fb615d5
 	github.com/tysontate/gommap v0.0.0-20190103205956-899e1273fb5c
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
-	golang.org/x/net v0.0.0-20190310074541-c10a0554eabf
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 // indirect
+	golang.org/x/net v0.0.0-20190310074541-c10a0554eabf // indirect
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
 	golang.org/x/sys v0.0.0-20190310054646-10058d7d4faa // indirect
 	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
 	google.golang.org/grpc v1.19.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
+	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919 // indirect
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
-	upspin.io v0.0.0-20190213074607-15046f4f3b2a
+	upspin.io v0.0.0-20190213074607-15046f4f3b2a // indirect
 )

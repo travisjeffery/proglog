@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 	"net"
-	"strings"
+	"sync"
 
+	"github.com/davecgh/go-spew/spew"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/hashicorp/serf/serf"
 	api "github.com/travisjeffery/proglog/api/v1"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
@@ -18,23 +18,33 @@ import (
 
 var _ api.LogServer = (*grpcServer)(nil)
 
+// Config is used to configure the server.
 type Config struct {
 	NodeName       string
 	SerfBindAddr   *net.TCPAddr
-	StartJoinAddrs []string
 	RPCAddr        *net.TCPAddr
+	StartJoinAddrs []string
 	CommitLog      CommitLog
 	ClientOptions  []grpc.DialOption
 }
 
-type grpcServer struct {
-	config    *Config
-	commitlog CommitLog
-	logger    *log.Logger
-	serf      *serf.Serf
-	events    chan serf.Event
+// CommitLog definese the interface the server relies on.
+type CommitLog interface {
+	AppendBatch(*api.RecordBatch) (uint64, error)
+	ReadBatch(uint64) (*api.RecordBatch, error)
 }
 
+type grpcServer struct {
+	mu          sync.Mutex
+	config      *Config
+	commitlog   CommitLog
+	logger      *log.Logger
+	serf        *serf.Serf
+	events      chan serf.Event
+	replicateCh map[string]chan struct{}
+}
+
+// NewAPI creates a new *grpc.Server instance  configured per the given config.
 func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
 	opts = append(opts, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 		grpc_auth.StreamServerInterceptor(auth),
@@ -52,8 +62,9 @@ func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
 
 func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 	srv = &grpcServer{
-		config:    config,
-		commitlog: config.CommitLog,
+		config:      config,
+		commitlog:   config.CommitLog,
+		replicateCh: make(map[string]chan struct{}),
 	}
 	err = srv.setupSerf()
 	if err != nil {
@@ -63,20 +74,86 @@ func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 }
 
 func (s *grpcServer) eventHandler() {
-	names := func(e serf.MemberEvent) string {
-		names := []string{}
-		for _, m := range e.Members {
-			names = append(names, m.Name)
-		}
-		return strings.Join(names, ", ")
-	}
 	for e := range s.events {
 		switch e.EventType() {
 		case serf.EventMemberJoin:
-			log.Printf("[DEBUG] proglog: handled node join event: %v", names(e.(serf.MemberEvent)))
+			s.replicate(e.(serf.MemberEvent))
 		case serf.EventMemberLeave, serf.EventMemberFailed:
-			log.Printf("[DEBUG] proglog: handled node failed event: %v", names(e.(serf.MemberEvent)))
+			s.stopReplicating(e.(serf.MemberEvent))
 		}
+	}
+}
+
+func (s *grpcServer) replicate(me serf.MemberEvent) error {
+	for _, m := range me.Members {
+		// don't replicate from ourself
+		rpcAddr := m.Tags["rpc_addr"]
+		if rpcAddr == s.config.RPCAddr.String() {
+			continue
+		}
+
+		cc, err := grpc.Dial(rpcAddr, s.config.ClientOptions...)
+		if err != nil {
+			return err
+		}
+
+		client := api.NewLogClient(cc)
+		ctx := context.Background()
+
+		stream, err := client.ConsumeStream(ctx, &api.ConsumeRequest{
+			Offset: 0,
+		})
+		if err != nil {
+			return err
+		}
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if _, ok := s.replicateCh[rpcAddr]; ok {
+			// already replicating so skip
+			continue
+		}
+		s.replicateCh[rpcAddr] = make(chan struct{})
+
+		go func() {
+			defer cc.Close()
+
+			spew.Dump("replicating", rpcAddr)
+
+			for {
+				select {
+				case <-s.replicateCh[rpcAddr]:
+					break
+				default:
+					recv, err := stream.Recv()
+					if err != nil {
+						break
+					}
+					_, err = s.Produce(ctx, &api.ProduceRequest{
+						RecordBatch: recv.RecordBatch,
+					})
+					if err != nil {
+						break
+					}
+				}
+
+			}
+		}()
+	}
+
+	return nil
+}
+
+func (s *grpcServer) stopReplicating(me serf.MemberEvent) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, m := range me.Members {
+		rpcAddr := m.Tags["rpc_addr"]
+		if rpcAddr == s.config.RPCAddr.String() {
+			continue
+		}
+		close(s.replicateCh[rpcAddr])
+		delete(s.replicateCh, rpcAddr)
 	}
 }
 
@@ -86,19 +163,24 @@ func (s *grpcServer) setupSerf() (err error) {
 	config.NodeName = s.config.SerfBindAddr.String()
 	config.MemberlistConfig.BindAddr = s.config.SerfBindAddr.IP.String()
 	config.MemberlistConfig.BindPort = s.config.SerfBindAddr.Port
+	config.Tags["rpc_addr"] = s.config.RPCAddr.String()
+
 	s.events = make(chan serf.Event)
 	config.EventCh = s.events
 	s.serf, err = serf.Create(config)
 	if err != nil {
 		return err
 	}
+
 	go s.eventHandler()
+
 	if s.config.StartJoinAddrs != nil {
 		_, err = s.serf.Join(s.config.StartJoinAddrs, true)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -107,44 +189,8 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	res := &api.ProduceResponse{FirstOffset: offset}
-	if err = s.replicateProduce(ctx, req); err != nil {
-		return res, err
-	}
-	return res, nil
-}
-
-func (s *grpcServer) replicateProduce(ctx context.Context, req *api.ProduceRequest) error {
-	if s.serf == nil {
-		return nil
-	}
-	g, ctx := errgroup.WithContext(ctx)
-	for _, member := range s.serf.Members() {
-		rpcAddr := member.Tags["rpc_addr"]
-		if rpcAddr == s.config.RPCAddr.String() {
-			// ignore the member of the current server
-			continue
-		}
-		g.Go(func() error {
-			// TODO(tj): optimize this
-
-			cc, err := grpc.Dial(rpcAddr, s.config.ClientOptions...)
-			if err != nil {
-				return err
-			}
-			defer cc.Close()
-
-			client := api.NewLogClient(cc)
-
-			_, err = client.Produce(ctx, req)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-	}
-	return g.Wait()
+	spew.Dump("produce", req, offset, s.config.RPCAddr.String())
+	return &api.ProduceResponse{FirstOffset: offset}, nil
 }
 
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api.ConsumeResponse, error) {
@@ -158,12 +204,21 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api
 func (s *grpcServer) ConsumeStream(req *api.ConsumeRequest, stream api.Log_ConsumeStreamServer) error {
 	for {
 		res, err := s.Consume(stream.Context(), req)
-		if err != nil {
+		spew.Dump("consume stream", res, err)
+		switch err.(type) {
+		case api.ErrOffsetOutOfRange:
+			// expected err, continue consuming until we get something
+			continue
+		case nil:
+			// succesfully got a msg, send it to the stream
+		default:
+			// unexpected error
 			return err
 		}
 		if err = stream.Send(res); err != nil {
 			return err
 		}
+		spew.Dump("about to increment req offset", req.Offset)
 		req.Offset++
 	}
 }
@@ -182,11 +237,6 @@ func (s *grpcServer) ProduceStream(stream api.Log_ProduceStreamServer) error {
 			return err
 		}
 	}
-}
-
-type CommitLog interface {
-	AppendBatch(*api.RecordBatch) (uint64, error)
-	ReadBatch(uint64) (*api.RecordBatch, error)
 }
 
 func auth(ctx context.Context) (context.Context, error) {

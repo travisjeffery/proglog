@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/travisjeffery/go-dynaport"
 	api "github.com/travisjeffery/proglog/api/v1"
@@ -19,10 +20,11 @@ import (
 
 func TestServer(t *testing.T) {
 	for scenario, fn := range map[string]func(t *testing.T){
-		"consume empty log fails":                             testConsumeEmpty,
-		"produce/consume a message to/from the log succeeeds": testProduceConsume,
-		"consume past log boundary fails":                     testConsumePastBoundary,
-		"produce/consume stream succeeds":                     testProduceConsumeStream,
+		// "consume empty log fails":                             testConsumeEmpty,
+		// "produce/consume a message to/from the log succeeeds": testProduceConsume,
+		// "consume past log boundary fails":                     testConsumePastBoundary,
+		// "produce/consume stream succeeds":                     testProduceConsumeStream,
+		"produce replication succeeds": testProduceReplication,
 	} {
 		t.Run(scenario, func(t *testing.T) { fn(t) })
 	}
@@ -138,18 +140,45 @@ func testProduceConsumeStream(t *testing.T) {
 	}
 }
 
-// func testJoin(t *testing.T) {
-// 	var addr1 *net.TCPAddr
-// 	_, server1, teardown1 := testSetup(t, func(config *Config) {
-// 		addr1 = config.SerfBindAddr
-// 	})
-// 	defer teardown1()
+func testProduceReplication(t *testing.T) {
+	var addr1 *net.TCPAddr
+	client1, _, teardown1 := testSetup(t, func(config *Config) {
+		addr1 = config.SerfBindAddr
+	})
+	defer teardown1()
 
-// 	_, server2, teardown2 := testSetup(t, func(config *Config) {
-// 		config.StartJoinAddrs = []string{addr1.config.SerfBindAddr.String()}
-// 	})
-// 	defer teardown2()
-// }
+	client2, _, teardown2 := testSetup(t, func(config *Config) {
+		config.StartJoinAddrs = []string{addr1.String()}
+	})
+	defer teardown2()
+
+	ctx := context.Background()
+
+	want := &api.RecordBatch{
+		Records: []*api.Record{{
+			Value: []byte("hello world"),
+		}},
+	}
+
+	produce, err := client1.Produce(context.Background(), &api.ProduceRequest{
+		RecordBatch: want,
+	})
+	check(t, err)
+
+	consume, err := client1.Consume(ctx, &api.ConsumeRequest{
+		Offset: produce.FirstOffset,
+	})
+	check(t, err)
+	equal(t, consume.RecordBatch, want)
+
+	time.Sleep(250 * time.Millisecond)
+
+	consume, err = client2.Consume(ctx, &api.ConsumeRequest{
+		Offset: produce.FirstOffset,
+	})
+	check(t, err)
+	equal(t, consume.RecordBatch, want)
+}
 
 func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, func()) {
 	t.Helper()
@@ -192,6 +221,7 @@ func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, fun
 	check(t, err)
 
 	config := &Config{
+		RPCAddr:       rpcAddr,
 		SerfBindAddr:  serfAddr,
 		CommitLog:     &Log{Dir: dir},
 		ClientOptions: clientOptions,

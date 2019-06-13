@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -42,8 +43,11 @@ func (i *index) readEntry(offset uint64) (e entry, err error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	i.init()
-	p := make([]byte, entryWidth)
 	pos := offset * entryWidth
+	if uint64(len(i.mmap)) < pos+entryWidth {
+		return e, io.EOF
+	}
+	p := make([]byte, entryWidth)
 	copy(p, i.mmap[pos:pos+entryWidth])
 	b := bytes.NewReader(p)
 	err = binary.Read(b, encoding, &e)
@@ -69,6 +73,9 @@ func (i *index) writeEntry(e entry) error {
 
 func (i *index) WriteAt(p []byte, offset int64) (int, error) {
 	i.init()
+	if int64(len(i.mmap)) < offset+entryWidth {
+		return 0, io.EOF
+	}
 	n := copy(i.mmap[offset:offset+entryWidth], p)
 	return n, nil
 }

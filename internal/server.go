@@ -6,7 +6,6 @@ import (
 	"net"
 	"sync"
 
-	"github.com/davecgh/go-spew/spew"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/hashicorp/serf/serf"
@@ -35,13 +34,13 @@ type CommitLog interface {
 }
 
 type grpcServer struct {
-	mu          sync.Mutex
-	config      *Config
-	commitlog   CommitLog
-	logger      *log.Logger
-	serf        *serf.Serf
-	events      chan serf.Event
-	replicateCh map[string]chan struct{}
+	mu         sync.Mutex
+	config     *Config
+	commitlog  CommitLog
+	logger     *log.Logger
+	serf       *serf.Serf
+	events     chan serf.Event
+	replicator *replicator
 }
 
 // NewAPI creates a new *grpc.Server instance  configured per the given config.
@@ -62,9 +61,12 @@ func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
 
 func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 	srv = &grpcServer{
-		config:      config,
-		commitlog:   config.CommitLog,
-		replicateCh: make(map[string]chan struct{}),
+		config:    config,
+		commitlog: config.CommitLog,
+	}
+	srv.replicator = &replicator{
+		clientOptions: config.ClientOptions,
+		produce:       srv.Produce,
 	}
 	err = srv.setupSerf()
 	if err != nil {
@@ -77,83 +79,22 @@ func (s *grpcServer) eventHandler() {
 	for e := range s.events {
 		switch e.EventType() {
 		case serf.EventMemberJoin:
-			s.replicate(e.(serf.MemberEvent))
-		case serf.EventMemberLeave, serf.EventMemberFailed:
-			s.stopReplicating(e.(serf.MemberEvent))
-		}
-	}
-}
-
-func (s *grpcServer) replicate(me serf.MemberEvent) error {
-	for _, m := range me.Members {
-		// don't replicate from ourself
-		rpcAddr := m.Tags["rpc_addr"]
-		if rpcAddr == s.config.RPCAddr.String() {
-			continue
-		}
-
-		cc, err := grpc.Dial(rpcAddr, s.config.ClientOptions...)
-		if err != nil {
-			return err
-		}
-
-		client := api.NewLogClient(cc)
-		ctx := context.Background()
-
-		stream, err := client.ConsumeStream(ctx, &api.ConsumeRequest{
-			Offset: 0,
-		})
-		if err != nil {
-			return err
-		}
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		if _, ok := s.replicateCh[rpcAddr]; ok {
-			// already replicating so skip
-			continue
-		}
-		s.replicateCh[rpcAddr] = make(chan struct{})
-
-		go func() {
-			defer cc.Close()
-
-			spew.Dump("replicating", rpcAddr)
-
-			for {
-				select {
-				case <-s.replicateCh[rpcAddr]:
-					break
-				default:
-					recv, err := stream.Recv()
-					if err != nil {
-						break
-					}
-					_, err = s.Produce(ctx, &api.ProduceRequest{
-						RecordBatch: recv.RecordBatch,
-					})
-					if err != nil {
-						break
-					}
+			for _, m := range e.(serf.MemberEvent).Members {
+				rpcAddr := m.Tags["rpc_addr"]
+				if rpcAddr == s.config.RPCAddr.String() {
+					continue
 				}
-
+				s.replicator.Add(rpcAddr)
 			}
-		}()
-	}
-
-	return nil
-}
-
-func (s *grpcServer) stopReplicating(me serf.MemberEvent) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, m := range me.Members {
-		rpcAddr := m.Tags["rpc_addr"]
-		if rpcAddr == s.config.RPCAddr.String() {
-			continue
+		case serf.EventMemberLeave, serf.EventMemberFailed:
+			for _, m := range e.(serf.MemberEvent).Members {
+				rpcAddr := m.Tags["rpc_addr"]
+				if rpcAddr == s.config.RPCAddr.String() {
+					continue
+				}
+				s.replicator.Remove(rpcAddr)
+			}
 		}
-		close(s.replicateCh[rpcAddr])
-		delete(s.replicateCh, rpcAddr)
 	}
 }
 
@@ -189,7 +130,6 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump("produce", req, offset, s.config.RPCAddr.String())
 	return &api.ProduceResponse{FirstOffset: offset}, nil
 }
 
@@ -204,7 +144,6 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api
 func (s *grpcServer) ConsumeStream(req *api.ConsumeRequest, stream api.Log_ConsumeStreamServer) error {
 	for {
 		res, err := s.Consume(stream.Context(), req)
-		spew.Dump("consume stream", res, err)
 		switch err.(type) {
 		case api.ErrOffsetOutOfRange:
 			// expected err, continue consuming until we get something
@@ -218,7 +157,6 @@ func (s *grpcServer) ConsumeStream(req *api.ConsumeRequest, stream api.Log_Consu
 		if err = stream.Send(res); err != nil {
 			return err
 		}
-		spew.Dump("about to increment req offset", req.Offset)
 		req.Offset++
 	}
 }
@@ -245,7 +183,7 @@ func auth(ctx context.Context) (context.Context, error) {
 		tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
 		addr := peer.Addr.String()
 		username := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
-		log.Printf("auth: %s: %s", addr, username)
+		log.Printf("[INFO] proglog: auth: %s: %s", addr, username)
 	}
 	return ctx, nil
 }

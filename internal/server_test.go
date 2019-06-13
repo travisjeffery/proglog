@@ -20,11 +20,11 @@ import (
 
 func TestServer(t *testing.T) {
 	for scenario, fn := range map[string]func(t *testing.T){
-		// "consume empty log fails":                             testConsumeEmpty,
-		// "produce/consume a message to/from the log succeeeds": testProduceConsume,
-		// "consume past log boundary fails":                     testConsumePastBoundary,
-		// "produce/consume stream succeeds":                     testProduceConsumeStream,
-		"produce replication succeeds": testProduceReplication,
+		"consume empty log fails":                             testConsumeEmpty,
+		"produce/consume a message to/from the log succeeeds": testProduceConsume,
+		"consume past log boundary fails":                     testConsumePastBoundary,
+		"produce/consume stream succeeds":                     testProduceConsumeStream,
+		"produce replication succeeds":                        testProduceReplication,
 	} {
 		t.Run(scenario, func(t *testing.T) { fn(t) })
 	}

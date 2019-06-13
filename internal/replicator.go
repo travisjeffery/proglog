@@ -27,9 +27,6 @@ func (r *replicator) init() {
 	if r.servers == nil {
 		r.servers = make(map[string]chan struct{})
 	}
-	if r.errors == nil {
-		r.errors = make(chan error)
-	}
 }
 
 func (r *replicator) Add(addr string) error {

@@ -81,7 +81,7 @@ func (s *grpcServer) eventHandler() {
 		case serf.EventMemberJoin:
 			for _, m := range e.(serf.MemberEvent).Members {
 				rpcAddr := m.Tags["rpc_addr"]
-				if rpcAddr == s.config.RPCAddr.String() {
+				if s.isMe(rpcAddr) {
 					continue
 				}
 				s.replicator.Add(rpcAddr)
@@ -89,7 +89,7 @@ func (s *grpcServer) eventHandler() {
 		case serf.EventMemberLeave, serf.EventMemberFailed:
 			for _, m := range e.(serf.MemberEvent).Members {
 				rpcAddr := m.Tags["rpc_addr"]
-				if rpcAddr == s.config.RPCAddr.String() {
+				if s.isMe(rpcAddr) {
 					continue
 				}
 				s.replicator.Remove(rpcAddr)
@@ -175,6 +175,11 @@ func (s *grpcServer) ProduceStream(stream api.Log_ProduceStreamServer) error {
 			return err
 		}
 	}
+}
+
+// isMe returns true if the given address is this server's.
+func (s *grpcServer) isMe(addr string) bool {
+	return s.config.RPCAddr.String() == addr
 }
 
 func auth(ctx context.Context) (context.Context, error) {

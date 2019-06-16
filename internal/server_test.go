@@ -24,7 +24,7 @@ func TestServer(t *testing.T) {
 		"produce/consume a message to/from the log succeeeds": testProduceConsume,
 		"consume past log boundary fails":                     testConsumePastBoundary,
 		"produce/consume stream succeeds":                     testProduceConsumeStream,
-		"produce replication succeeds":                        testProduceReplication,
+		"replication succeeds":                                testReplication,
 	} {
 		t.Run(scenario, func(t *testing.T) { fn(t) })
 	}
@@ -140,7 +140,7 @@ func testProduceConsumeStream(t *testing.T) {
 	}
 }
 
-func testProduceReplication(t *testing.T) {
+func testReplication(t *testing.T) {
 	var addr1 *net.TCPAddr
 	client1, _, teardown1 := testSetup(t, func(config *Config) {
 		addr1 = config.SerfBindAddr

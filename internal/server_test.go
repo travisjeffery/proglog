@@ -19,21 +19,22 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	for scenario, fn := range map[string]func(t *testing.T){
+	for scenario, fn := range map[string]func(t *testing.T, client api.LogClient, config *Config){
 		"consume empty log fails":                             testConsumeEmpty,
 		"produce/consume a message to/from the log succeeeds": testProduceConsume,
 		"consume past log boundary fails":                     testConsumePastBoundary,
 		"produce/consume stream succeeds":                     testProduceConsumeStream,
 		"replication succeeds":                                testReplication,
 	} {
-		t.Run(scenario, func(t *testing.T) { fn(t) })
+		t.Run(scenario, func(t *testing.T) {
+			client, config, teardown := testSetup(t, nil)
+			defer teardown()
+			fn(t, client, config)
+		})
 	}
 }
 
-func testConsumeEmpty(t *testing.T) {
-	client, _, teardown := testSetup(t, nil)
-	defer teardown()
-
+func testConsumeEmpty(t *testing.T, client api.LogClient, config *Config) {
 	consume, err := client.Consume(context.Background(), &api.ConsumeRequest{
 		Offset: 0,
 	})
@@ -46,10 +47,8 @@ func testConsumeEmpty(t *testing.T) {
 	}
 }
 
-func testProduceConsume(t *testing.T) {
-	client, _, teardown := testSetup(t, nil)
+func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	ctx := context.Background()
-	defer teardown()
 
 	want := &api.RecordBatch{
 		Records: []*api.Record{{
@@ -69,10 +68,8 @@ func testProduceConsume(t *testing.T) {
 	equal(t, consume.RecordBatch, want)
 }
 
-func testConsumePastBoundary(t *testing.T) {
-	client, _, teardown := testSetup(t, nil)
+func testConsumePastBoundary(t *testing.T, client api.LogClient, config *Config) {
 	ctx := context.Background()
-	defer teardown()
 
 	produce, err := client.Produce(ctx, &api.ProduceRequest{
 		RecordBatch: &api.RecordBatch{
@@ -95,10 +92,8 @@ func testConsumePastBoundary(t *testing.T) {
 	}
 }
 
-func testProduceConsumeStream(t *testing.T) {
-	client, _, teardown := testSetup(t, nil)
+func testProduceConsumeStream(t *testing.T, client api.LogClient, config *Config) {
 	ctx := context.Background()
-	defer teardown()
 
 	batches := []*api.RecordBatch{{
 		Records: []*api.Record{{
@@ -140,15 +135,9 @@ func testProduceConsumeStream(t *testing.T) {
 	}
 }
 
-func testReplication(t *testing.T) {
-	var addr1 *net.TCPAddr
-	client1, _, teardown1 := testSetup(t, func(config *Config) {
-		addr1 = config.SerfBindAddr
-	})
-	defer teardown1()
-
+func testReplication(t *testing.T, client1 api.LogClient, config1 *Config) {
 	client2, _, teardown2 := testSetup(t, func(config *Config) {
-		config.StartJoinAddrs = []string{addr1.String()}
+		config.StartJoinAddrs = []string{config1.SerfBindAddr.String()}
 	})
 	defer teardown2()
 
@@ -160,7 +149,7 @@ func testReplication(t *testing.T) {
 		}},
 	}
 
-	produce, err := client1.Produce(context.Background(), &api.ProduceRequest{
+	produce, err := client1.Produce(ctx, &api.ProduceRequest{
 		RecordBatch: want,
 	})
 	check(t, err)
@@ -180,7 +169,11 @@ func testReplication(t *testing.T) {
 	equal(t, consume.RecordBatch, want)
 }
 
-func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, func()) {
+func testSetup(t *testing.T, fn func(*Config)) (
+	client api.LogClient,
+	config *Config,
+	teardown func(),
+) {
 	t.Helper()
 
 	ports := dynaport.Get(2)
@@ -220,7 +213,7 @@ func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, fun
 	dir, err := ioutil.TempDir("", "server-test")
 	check(t, err)
 
-	config := &Config{
+	config = &Config{
 		RPCAddr:       rpcAddr,
 		SerfBindAddr:  serfAddr,
 		CommitLog:     &Log{Dir: dir},
@@ -236,9 +229,9 @@ func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, fun
 		server.Serve(l)
 	}()
 
-	client := api.NewLogClient(cc)
+	client = api.NewLogClient(cc)
 
-	return client, server, func() {
+	return client, config, func() {
 		server.Stop()
 		cc.Close()
 		l.Close()

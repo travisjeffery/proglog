@@ -165,7 +165,9 @@ func testSetup(t *testing.T) (client api.LogClient, teardown func()) {
 	dir, err := ioutil.TempDir("", "server-test")
 	check(t, err)
 
-	srv := NewAPI(&log.Log{Dir: dir}, grpc.Creds(tlsCreds))
+	srv := NewAPI(&Config{
+		CommitLog: &log.Log{Dir: dir},
+	}, grpc.Creds(tlsCreds))
 
 	go func() {
 		srv.Serve(l)

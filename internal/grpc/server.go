@@ -14,30 +14,36 @@ import (
 
 var _ api.LogServer = (*grpcServer)(nil)
 
-func NewAPI(log logger, opts ...grpc.ServerOption) *grpc.Server {
+type Config struct {
+	CommitLog CommitLog
+}
+
+func NewAPI(config *Config, opts ...grpc.ServerOption) *grpc.Server {
 	opts = append(opts, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 		grpc_auth.StreamServerInterceptor(auth),
 	)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		grpc_auth.UnaryServerInterceptor(auth),
 	)))
 	gsrv := grpc.NewServer(opts...)
-	srv := newgrpcServer(log)
+	srv := newgrpcServer(config)
 	api.RegisterLogServer(gsrv, srv)
 	return gsrv
 }
 
-func newgrpcServer(log logger) *grpcServer {
+func newgrpcServer(config *Config) *grpcServer {
 	return &grpcServer{
-		log: log,
+		config:    config,
+		commitlog: config.CommitLog,
 	}
 }
 
 type grpcServer struct {
-	log logger
+	config    *Config
+	commitlog CommitLog
 }
 
 func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error) {
-	offset, err := s.log.AppendBatch(req.RecordBatch)
+	offset, err := s.commitlog.AppendBatch(req.RecordBatch)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +52,7 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 }
 
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api.ConsumeResponse, error) {
-	batch, err := s.log.ReadBatch(req.Offset)
+	batch, err := s.commitlog.ReadBatch(req.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +88,8 @@ func (s *grpcServer) ProduceStream(stream api.Log_ProduceStreamServer) error {
 	}
 }
 
-type logger interface {
+// CommitLog definese the interface the server relies on.
+type CommitLog interface {
 	AppendBatch(*api.RecordBatch) (uint64, error)
 	ReadBatch(uint64) (*api.RecordBatch, error)
 }

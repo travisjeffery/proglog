@@ -15,18 +15,10 @@ type replicator struct {
 	// servers is the list of servers currently being replicated, close the associated channel
 	// to stop replicating.
 	servers map[string]chan struct{}
-	// errors is the channel to listen to for replication errors
-	errors chan error
 	// mu locks the replicator for modification
 	mu sync.Mutex
 	// produce is the function the replicator calls to replicate.
 	produce func(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error)
-}
-
-func (r *replicator) init() {
-	if r.servers == nil {
-		r.servers = make(map[string]chan struct{})
-	}
 }
 
 func (r *replicator) Add(addr string) error {
@@ -65,10 +57,11 @@ func (r *replicator) add(addr string) {
 
 	defer cc.Close()
 
+loop:
 	for {
 		select {
 		case <-r.servers[addr]:
-			break
+			break loop
 		default:
 			recv, err := stream.Recv()
 			if err != nil {
@@ -101,13 +94,11 @@ func (r *replicator) Remove(addr string) error {
 }
 
 func (r *replicator) err(err error) {
-	if r.errors == nil {
-		log.Printf("[ERROR] proglog: %v", err)
-		return
-	}
-	r.errors <- err
+	log.Printf("[ERROR] proglog: %v", err)
 }
 
-func (r *replicator) Errors() chan error {
-	return r.errors
+func (r *replicator) init() {
+	if r.servers == nil {
+		r.servers = make(map[string]chan struct{})
+	}
 }

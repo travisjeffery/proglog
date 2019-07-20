@@ -30,6 +30,7 @@ func main() {
 	check(err)
 
 	rawCACert, err := ioutil.ReadFile(*caCertFlag)
+	check(err)
 
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(rawCACert)

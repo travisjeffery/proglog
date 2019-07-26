@@ -2,7 +2,6 @@ package log
 
 import (
 	"os"
-	"sync/atomic"
 )
 
 type log struct {
@@ -15,17 +14,25 @@ func newLog(f *os.File) (*log, error) {
 	if err != nil {
 		return nil, err
 	}
+	size := uint64(fi.Size())
 	return &log{
 		File: f,
-		size: uint64(fi.Size()),
+		size: size,
 	}, nil
 }
 
-// Append append the bytes to the end of the log file and returns the length of the file.
-func (l *log) Append(p []byte) (uint64, error) {
-	n, err := l.Write(p)
+// Append the bytes to the end of the log file and returns the position the bytes were written and
+// the number of bytes written.
+func (l *log) Append(p []byte) (uint64, uint64, error) {
+	pos := l.size
+	n, err := l.WriteAt(p, int64(pos))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return atomic.AddUint64(&l.size, uint64(n)), nil
+	l.size += uint64(n)
+	return uint64(n), pos, nil
+}
+
+func (l *log) Size() uint64 {
+	return l.size
 }

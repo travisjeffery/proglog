@@ -58,25 +58,25 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 }
 
 // Append the bytes to the segment and return the next offset and bytes in the segment.
-func (s *segment) Append(p []byte) (uint64, uint64, error) {
-	pos := s.log.size
-	n, err := s.log.Write(p)
+func (s *segment) Append(p []byte) (nextOffset, size uint64, err error) {
+	n, pos, err := s.log.Append(p)
 	if err != nil {
 		return 0, 0, err
 	}
 	if err = s.index.Write(entry{
-		Off: s.nextOffset,
+		// index offsets are relative to base offset
+		Off: s.nextOffset - s.baseOffset,
 		Pos: pos,
-		Len: uint64(n),
+		Len: n,
 	}); err != nil {
 		return 0, 0, err
 	}
 	s.nextOffset++
-	return s.nextOffset, pos, nil
+	return s.nextOffset, pos + n, nil
 }
 
 func (s *segment) FindIndex(off uint64) (entry, error) {
-	return s.index.Read(off)
+	return s.index.Read(off - s.baseOffset)
 }
 
 func (s *segment) ReadAt(p []byte, off int64) (int, error) {

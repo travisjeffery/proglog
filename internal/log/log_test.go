@@ -20,9 +20,10 @@ func TestLog(t *testing.T) {
 	l, err := newLog(f)
 	req.NoError(t, err)
 
-	size, err := l.Append(b)
+	n, pos, err := l.Append(b)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	req.Equal(t, size, uint64(len(b)*2))
+	req.Equal(t, pos+n, uint64(len(b)*2))
+	req.Equal(t, l.Size(), uint64(len(b)*2))
 }

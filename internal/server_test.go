@@ -8,10 +8,10 @@ import (
 	"net"
 	"os/user"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
+	req "github.com/stretchr/testify/require"
 	"github.com/travisjeffery/go-dynaport"
 	api "github.com/travisjeffery/proglog/api/v1"
 	"github.com/travisjeffery/proglog/internal/log"
@@ -39,13 +39,8 @@ func testConsumeEmpty(t *testing.T, client api.LogClient, config *Config) {
 	consume, err := client.Consume(context.Background(), &api.ConsumeRequest{
 		Offset: 0,
 	})
-	if consume != nil {
-		t.Fatalf("got consume: %v, want: nil", consume)
-	}
-	got, want := grpc.Code(err), grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
-	if got != want {
-		t.Fatalf("got code: %v, want: %v, err: %v", got, want, err)
-	}
+	req.Nil(t, consume)
+	req.Equal(t, grpc.Code(err), grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err()))
 }
 
 func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
@@ -60,13 +55,13 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	produce, err := client.Produce(context.Background(), &api.ProduceRequest{
 		RecordBatch: want,
 	})
-	check(t, err)
+	req.NoError(t, err)
 
 	consume, err := client.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.FirstOffset,
 	})
-	check(t, err)
-	equal(t, consume.RecordBatch, want)
+	req.NoError(t, err)
+	req.Equal(t, want, consume.RecordBatch)
 }
 
 func testConsumePastBoundary(t *testing.T, client api.LogClient, config *Config) {
@@ -79,7 +74,7 @@ func testConsumePastBoundary(t *testing.T, client api.LogClient, config *Config)
 			}},
 		},
 	})
-	check(t, err)
+	req.NoError(t, err)
 
 	consume, err := client.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.FirstOffset + 1,
@@ -108,15 +103,15 @@ func testProduceConsumeStream(t *testing.T, client api.LogClient, config *Config
 
 	{
 		stream, err := client.ProduceStream(ctx)
-		check(t, err)
+		req.NoError(t, err)
 
 		for offset, batch := range batches {
 			err = stream.Send(&api.ProduceRequest{
 				RecordBatch: batch,
 			})
-			check(t, err)
+			req.NoError(t, err)
 			res, err := stream.Recv()
-			check(t, err)
+			req.NoError(t, err)
 			if res.FirstOffset != uint64(offset) {
 				t.Fatalf("got offset: %d, want: %d", res.FirstOffset, offset)
 			}
@@ -126,12 +121,12 @@ func testProduceConsumeStream(t *testing.T, client api.LogClient, config *Config
 
 	{
 		stream, err := client.ConsumeStream(ctx, &api.ConsumeRequest{Offset: 0})
-		check(t, err)
+		req.NoError(t, err)
 
 		for _, batch := range batches {
 			res, err := stream.Recv()
-			check(t, err)
-			equal(t, res.RecordBatch, batch)
+			req.NoError(t, err)
+			req.Equal(t, res.RecordBatch, batch)
 		}
 	}
 }
@@ -153,21 +148,21 @@ func testReplication(t *testing.T, client1 api.LogClient, config1 *Config) {
 	produce, err := client1.Produce(ctx, &api.ProduceRequest{
 		RecordBatch: want,
 	})
-	check(t, err)
+	req.NoError(t, err)
 
 	consume, err := client1.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.FirstOffset,
 	})
-	check(t, err)
-	equal(t, consume.RecordBatch, want)
+	req.NoError(t, err)
+	req.Equal(t, consume.RecordBatch, want)
 
 	time.Sleep(250 * time.Millisecond)
 
 	consume, err = client2.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.FirstOffset,
 	})
-	check(t, err)
-	equal(t, consume.RecordBatch, want)
+	req.NoError(t, err)
+	req.Equal(t, consume.RecordBatch, want)
 }
 
 func testSetup(t *testing.T, fn func(*Config)) (
@@ -183,15 +178,15 @@ func testSetup(t *testing.T, fn func(*Config)) (
 	serfAddr := &net.TCPAddr{IP: []byte{127, 0, 0, 1}, Port: ports[1]}
 
 	l, err := net.Listen("tcp", rpcAddr.String())
-	check(t, err)
+	req.NoError(t, err)
 
 	rawCACert, err := ioutil.ReadFile(caCrt)
-	check(t, err)
+	req.NoError(t, err)
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(rawCACert)
 
 	clientCrt, err := tls.LoadX509KeyPair(clientCrt, clientKey)
-	check(t, err)
+	req.NoError(t, err)
 
 	tlsCreds := credentials.NewTLS(&tls.Config{
 		Certificates: []tls.Certificate{clientCrt},
@@ -200,10 +195,10 @@ func testSetup(t *testing.T, fn func(*Config)) (
 
 	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
 	cc, err := grpc.Dial(l.Addr().String(), clientOptions...)
-	check(t, err)
+	req.NoError(t, err)
 
 	serverCrt, err := tls.LoadX509KeyPair(serverCrt, serverKey)
-	check(t, err)
+	req.NoError(t, err)
 
 	tlsCreds = credentials.NewTLS(&tls.Config{
 		Certificates: []tls.Certificate{serverCrt},
@@ -212,10 +207,10 @@ func testSetup(t *testing.T, fn func(*Config)) (
 	})
 
 	dir, err := ioutil.TempDir("", "server-test")
-	check(t, err)
+	req.NoError(t, err)
 
 	clog, err := log.NewLog(dir, log.Config{})
-	check(t, err)
+	req.NoError(t, err)
 
 	config = &Config{
 		RPCAddr:       rpcAddr,
@@ -227,7 +222,7 @@ func testSetup(t *testing.T, fn func(*Config)) (
 		fn(config)
 	}
 	server, err := NewAPI(config, grpc.Creds(tlsCreds))
-	check(t, err)
+	req.NoError(t, err)
 
 	go func() {
 		server.Serve(l)
@@ -239,20 +234,6 @@ func testSetup(t *testing.T, fn func(*Config)) (
 		server.Stop()
 		cc.Close()
 		l.Close()
-	}
-}
-
-func check(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func equal(t *testing.T, got, want interface{}) {
-	t.Helper()
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got: %v, want %v", got, want)
 	}
 }
 

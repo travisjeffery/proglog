@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/gogo/protobuf/proto"
 	api "github.com/travisjeffery/proglog/api/v1"
 )
 
@@ -65,12 +66,12 @@ func NewLog(dir string, c Config) (*Log, error) {
 func (l *Log) AppendBatch(batch *api.RecordBatch) (uint64, error) {
 	l.Lock()
 	defer l.Unlock()
-	b, err := batch.Marshal()
+	p, err := proto.Marshal(batch)
 	if err != nil {
 		return 0, err
 	}
 	curr := l.activeSegment.nextOffset
-	next, _, err := l.activeSegment.Append(b)
+	next, _, err := l.activeSegment.Append(p)
 	if err != nil {
 		return 0, err
 	}
@@ -83,21 +84,27 @@ func (l *Log) AppendBatch(batch *api.RecordBatch) (uint64, error) {
 func (l *Log) ReadBatch(offset uint64) (*api.RecordBatch, error) {
 	l.RLock()
 	defer l.RUnlock()
-	if l.activeSegment.nextOffset == 0 ||
-		l.activeSegment.nextOffset <= offset {
+	var s *segment
+	for _, segment := range l.segments {
+		if segment.baseOffset <= offset {
+			s = segment
+			break
+		}
+	}
+	if s == nil || s.nextOffset <= offset {
 		return nil, api.ErrOffsetOutOfRange{Offset: offset}
 	}
-	entry, err := l.activeSegment.FindIndex(offset)
+	entry, err := s.FindIndex(offset)
 	if err != nil {
 		return nil, err
 	}
 	p := make([]byte, entry.Len)
-	_, err = l.activeSegment.ReadAt(p, int64(entry.Pos))
+	_, err = s.ReadAt(p, int64(entry.Pos))
 	if err != nil {
 		return nil, err
 	}
 	batch := &api.RecordBatch{}
-	err = batch.Unmarshal(p)
+	err = proto.Unmarshal(p, batch)
 	return batch, err
 }
 

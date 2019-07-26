@@ -9,11 +9,8 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
-	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -478,23 +475,6 @@ type LogServer interface {
 	ProduceStream(Log_ProduceStreamServer) error
 }
 
-// UnimplementedLogServer can be embedded to have forward compatible implementations.
-type UnimplementedLogServer struct {
-}
-
-func (*UnimplementedLogServer) Produce(ctx context.Context, req *ProduceRequest) (*ProduceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Produce not implemented")
-}
-func (*UnimplementedLogServer) Consume(ctx context.Context, req *ConsumeRequest) (*ConsumeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Consume not implemented")
-}
-func (*UnimplementedLogServer) ConsumeStream(req *ConsumeRequest, srv Log_ConsumeStreamServer) error {
-	return status.Errorf(codes.Unimplemented, "method ConsumeStream not implemented")
-}
-func (*UnimplementedLogServer) ProduceStream(srv Log_ProduceStreamServer) error {
-	return status.Errorf(codes.Unimplemented, "method ProduceStream not implemented")
-}
-
 func RegisterLogServer(s *grpc.Server, srv LogServer) {
 	s.RegisterService(&_Log_serviceDesc, srv)
 }
@@ -630,9 +610,9 @@ func (m *ProduceRequest) MarshalTo(dAtA []byte) (int, error) {
 		dAtA[i] = 0xa
 		i++
 		i = encodeVarintLog(dAtA, i, uint64(m.RecordBatch.Size()))
-		n1, err1 := m.RecordBatch.MarshalTo(dAtA[i:])
-		if err1 != nil {
-			return 0, err1
+		n1, err := m.RecordBatch.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
 		}
 		i += n1
 	}
@@ -713,9 +693,9 @@ func (m *ConsumeResponse) MarshalTo(dAtA []byte) (int, error) {
 		dAtA[i] = 0x12
 		i++
 		i = encodeVarintLog(dAtA, i, uint64(m.RecordBatch.Size()))
-		n2, err2 := m.RecordBatch.MarshalTo(dAtA[i:])
-		if err2 != nil {
-			return 0, err2
+		n2, err := m.RecordBatch.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
 		}
 		i += n2
 	}
@@ -907,7 +887,14 @@ func (m *Record) Size() (n int) {
 }
 
 func sovLog(x uint64) (n int) {
-	return (math_bits.Len64(x|1) + 6) / 7
+	for {
+		n++
+		x >>= 7
+		if x == 0 {
+			break
+		}
+	}
+	return n
 }
 func sozLog(x uint64) (n int) {
 	return sovLog(uint64((x << 1) ^ uint64((int64(x) >> 63))))

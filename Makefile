@@ -32,4 +32,4 @@ compile:
 		--gogo_out=plugins=grpc:. \
 		--proto_path=. \
 		--proto_path=vendor \
-		--proto_path=vendor/github.com/gogo/protobuf/protobuf
+		--proto_path=vendor/github.com/gogo/protobuf

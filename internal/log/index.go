@@ -14,10 +14,10 @@ var (
 )
 
 const (
-	offsetWidth   = 8
-	positionWidth = 8
-	lengthWidth   = 8
-	entryWidth    = offsetWidth + positionWidth + lengthWidth
+	offWidth   = 8
+	posWidth   = 8
+	lenWidth   = 8
+	entryWidth = offWidth + posWidth + lenWidth
 )
 
 type index struct {

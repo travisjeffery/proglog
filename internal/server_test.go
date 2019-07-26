@@ -14,6 +14,7 @@ import (
 
 	"github.com/travisjeffery/go-dynaport"
 	api "github.com/travisjeffery/proglog/api/v1"
+	"github.com/travisjeffery/proglog/internal/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -220,10 +221,13 @@ func testSetup(t *testing.T, fn func(*Config)) (api.LogClient, *grpc.Server, fun
 	dir, err := ioutil.TempDir("", "server-test")
 	check(t, err)
 
+	clog, err := log.NewLog(dir)
+	check(t, err)
+
 	config := &Config{
 		RPCAddr:       rpcAddr,
 		SerfBindAddr:  serfAddr,
-		CommitLog:     &Log{Dir: dir},
+		CommitLog:     clog,
 		ClientOptions: clientOptions,
 	}
 	if fn != nil {

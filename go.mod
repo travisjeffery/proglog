@@ -7,6 +7,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/hashicorp/serf v0.8.3
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/stretchr/testify v1.3.0
 	github.com/travisjeffery/go-dynaport v0.0.0-20171218080632-f8768fb615d5
 	github.com/tysontate/gommap v0.0.0-20190103205956-899e1273fb5c
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 // indirect

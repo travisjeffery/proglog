@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	proglog "github.com/travisjeffery/proglog/internal"
+	clog "github.com/travisjeffery/proglog/internal/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -46,7 +47,7 @@ func main() {
 	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
 
 	config := &proglog.Config{
-		CommitLog:     &proglog.Log{},
+		CommitLog:     &clog.Log{},
 		ClientOptions: clientOptions,
 	}
 

@@ -1,4 +1,4 @@
-package proglog
+package log_test
 
 import (
 	"io/ioutil"
@@ -6,12 +6,14 @@ import (
 	"reflect"
 	"testing"
 
+	req "github.com/stretchr/testify/require"
 	api "github.com/travisjeffery/proglog/api/v1"
+	"github.com/travisjeffery/proglog/internal/log"
 )
 
-func TestLog(t *testing.T) {
-	for scenario, fn := range map[string]func(t *testing.T, log *Log){
-		"append and read a batch succeeds": func(t *testing.T, log *Log) {
+func TestCommitLog(t *testing.T) {
+	for scenario, fn := range map[string]func(t *testing.T, log *log.Log){
+		"append and read a batch succeeds": func(t *testing.T, log *log.Log) {
 			append := &api.RecordBatch{
 				Records: []*api.Record{{
 					Value: []byte("hello world"),
@@ -32,7 +34,7 @@ func TestLog(t *testing.T) {
 				t.Fatalf("got read: %v, want: %v", read, append)
 			}
 		},
-		"offset out of range error": func(t *testing.T, log *Log) {
+		"offset out of range error": func(t *testing.T, log *log.Log) {
 			read, err := log.ReadBatch(0)
 			if read != nil {
 				t.Fatalf("expected read to be nil")
@@ -45,14 +47,33 @@ func TestLog(t *testing.T) {
 				t.Fatalf("got offset: %d, want: %d", apiErr.Offset, 0)
 			}
 		},
+		"setup existing segments": func(t *testing.T, o *log.Log) {
+			append := &api.RecordBatch{
+				Records: []*api.Record{{
+					Value: []byte("hello world"),
+				}},
+			}
+			for i := 0; i < 3; i++ {
+				_, _ = o.AppendBatch(append)
+			}
+
+			n, err := log.NewLog(o.Dir, o.Config)
+			req.NoError(t, err)
+			off, err := n.AppendBatch(append)
+			req.NoError(t, err)
+			req.Equal(t, uint64(3), off)
+		},
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			base, err := ioutil.TempDir("", "log-test")
-			if err != nil {
-				t.Fatal(err)
-			}
+			req.NoError(t, err)
 			defer os.RemoveAll(base)
-			log := &Log{Dir: base}
+
+			log, err := log.NewLog(base, log.Config{
+				MaxSegmentBytes: 32,
+			})
+			req.NoError(t, err)
+
 			fn(t, log)
 		})
 	}

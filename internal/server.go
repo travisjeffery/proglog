@@ -19,7 +19,6 @@ var _ api.LogServer = (*grpcServer)(nil)
 
 // Config is used to configure the server.
 type Config struct {
-	NodeName       string
 	SerfBindAddr   *net.TCPAddr
 	RPCAddr        *net.TCPAddr
 	StartJoinAddrs []string

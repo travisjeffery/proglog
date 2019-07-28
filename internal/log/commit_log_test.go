@@ -47,7 +47,7 @@ func TestCommitLog(t *testing.T) {
 				t.Fatalf("got offset: %d, want: %d", apiErr.Offset, 0)
 			}
 		},
-		"setup existing segments": func(t *testing.T, o *log.Log) {
+		"init with existing segments": func(t *testing.T, o *log.Log) {
 			append := &api.RecordBatch{
 				Records: []*api.Record{{
 					Value: []byte("hello world"),

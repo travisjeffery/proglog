@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 
@@ -76,12 +77,13 @@ func (i *index) Read(offset uint64) (e entry, err error) {
 }
 
 func (i *index) Write(e entry) error {
+	if uint64(len(i.mmap)) < i.pos+entryWidth {
+		fmt.Println("heyheyhey", len(i.mmap), i.pos+entryWidth)
+		return io.EOF
+	}
 	b := new(bytes.Buffer)
 	if err := binary.Write(b, encoding, e); err != nil {
 		return err
-	}
-	if uint64(len(i.mmap)) < i.pos+entryWidth {
-		return io.EOF
 	}
 	n := copy(i.mmap[i.pos:i.pos+entryWidth], b.Bytes())
 	i.pos += uint64(n)

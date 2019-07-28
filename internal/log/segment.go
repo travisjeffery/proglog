@@ -79,13 +79,13 @@ func (s *segment) FindIndex(off uint64) (entry, error) {
 	return s.index.Read(off - s.baseOffset)
 }
 
-func (s *segment) ReadAt(p []byte, off int64) (int, error) {
-	return s.log.ReadAt(p, off)
+func (s *segment) ReadAt(p []byte, pos uint64) (int, error) {
+	return s.log.ReadAt(p, int64(pos))
 }
 
 func (s *segment) IsMaxed() bool {
-	return s.log.size > s.config.MaxSegmentBytes ||
-		s.index.pos > s.config.MaxIndexBytes
+	return s.log.size >= s.config.MaxSegmentBytes ||
+		s.index.pos >= s.config.MaxIndexBytes
 }
 
 func nearestMultiple(j, k uint64) uint64 {

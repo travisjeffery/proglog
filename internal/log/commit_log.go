@@ -99,7 +99,7 @@ func (l *Log) ReadBatch(offset uint64) (*api.RecordBatch, error) {
 		return nil, err
 	}
 	p := make([]byte, entry.Len)
-	_, err = s.ReadAt(p, int64(entry.Pos))
+	_, err = s.ReadAt(p, entry.Pos)
 	if err != nil {
 		return nil, err
 	}

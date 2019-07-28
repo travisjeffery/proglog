@@ -9,8 +9,8 @@ import (
 	"net"
 	"strings"
 
-	proglog "github.com/travisjeffery/proglog/internal"
 	clog "github.com/travisjeffery/proglog/internal/log"
+	"github.com/travisjeffery/proglog/internal/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -46,7 +46,7 @@ func main() {
 
 	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
 
-	config := &proglog.Config{
+	config := &server.Config{
 		CommitLog:     &clog.Log{},
 		ClientOptions: clientOptions,
 	}
@@ -61,7 +61,7 @@ func main() {
 		config.StartJoinAddrs = strings.Split(*startJoinAddrsFlag, ",")
 	}
 
-	srv, err := proglog.NewAPI(config)
+	srv, err := server.NewAPI(config)
 	check(err)
 
 	err = srv.Serve(ln)

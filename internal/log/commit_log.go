@@ -10,7 +10,7 @@ import (
 	api "github.com/travisjeffery/proglog/api/v1"
 )
 
-type Log struct {
+type CommitLog struct {
 	sync.RWMutex
 
 	Dir    string
@@ -25,14 +25,14 @@ type Config struct {
 	MaxIndexBytes   uint64
 }
 
-func NewLog(dir string, c Config) (*Log, error) {
+func NewCommitLog(dir string, c Config) (*CommitLog, error) {
 	if c.MaxSegmentBytes == 0 {
 		c.MaxSegmentBytes = 1024
 	}
 	if c.MaxIndexBytes == 0 {
 		c.MaxIndexBytes = 1024
 	}
-	l := &Log{
+	l := &CommitLog{
 		Dir:    dir,
 		Config: c,
 	}
@@ -63,7 +63,7 @@ func NewLog(dir string, c Config) (*Log, error) {
 	return l, nil
 }
 
-func (l *Log) AppendBatch(batch *api.RecordBatch) (uint64, error) {
+func (l *CommitLog) AppendBatch(batch *api.RecordBatch) (uint64, error) {
 	l.Lock()
 	defer l.Unlock()
 	p, err := proto.Marshal(batch)
@@ -81,7 +81,7 @@ func (l *Log) AppendBatch(batch *api.RecordBatch) (uint64, error) {
 	return curr, err
 }
 
-func (l *Log) ReadBatch(offset uint64) (*api.RecordBatch, error) {
+func (l *CommitLog) ReadBatch(offset uint64) (*api.RecordBatch, error) {
 	l.RLock()
 	defer l.RUnlock()
 	var s *segment
@@ -108,7 +108,7 @@ func (l *Log) ReadBatch(offset uint64) (*api.RecordBatch, error) {
 	return batch, err
 }
 
-func (l *Log) newSegment(off uint64) error {
+func (l *CommitLog) newSegment(off uint64) error {
 	s, err := newSegment(l.Dir, off, l.Config)
 	if err != nil {
 		return err

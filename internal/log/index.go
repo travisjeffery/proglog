@@ -27,6 +27,18 @@ type index struct {
 	pos  uint64
 }
 
+type entry struct {
+	Off uint64
+	Pos uint64
+	Len uint64
+}
+
+func (e entry) IsZero() bool {
+	return e.Off == 0 &&
+		e.Pos == 0 &&
+		e.Len == 0
+}
+
 // nextIndex returns the created index and its last entry.
 func newIndex(f *os.File) (*index, entry, error) {
 	idx := &index{
@@ -45,18 +57,6 @@ func newIndex(f *os.File) (*index, entry, error) {
 		idx.pos += entryWidth
 	}
 	return idx, is.Entry(), nil
-}
-
-type entry struct {
-	Off uint64
-	Pos uint64
-	Len uint64
-}
-
-func (e entry) IsZero() bool {
-	return e.Off == 0 &&
-		e.Pos == 0 &&
-		e.Len == 0
 }
 
 func (i *index) Read(offset uint64) (e entry, err error) {

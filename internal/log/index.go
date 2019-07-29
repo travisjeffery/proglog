@@ -11,24 +11,18 @@ import (
 )
 
 var (
-	encoding = binary.BigEndian
+	enc = binary.BigEndian
 )
 
 const (
-	offWidth   = 8
-	posWidth   = 8
-	lenWidth   = 8
-	entryWidth = offWidth + posWidth + lenWidth
+	offWidth = 4
+	posWidth = 8
+	lenWidth = 8
+	entWidth = offWidth + posWidth + lenWidth
 )
 
-type index struct {
-	file *os.File
-	mmap gommap.MMap
-	pos  uint64
-}
-
 type entry struct {
-	Off uint64
+	Off uint32
 	Pos uint64
 	Len uint64
 }
@@ -37,6 +31,12 @@ func (e entry) IsZero() bool {
 	return e.Off == 0 &&
 		e.Pos == 0 &&
 		e.Len == 0
+}
+
+type index struct {
+	file *os.File
+	mmap gommap.MMap
+	pos  uint64
 }
 
 // nextIndex returns the created index and its last entry.
@@ -54,20 +54,22 @@ func newIndex(f *os.File) (*index, entry, error) {
 	}
 	is := &indexScanner{idx: idx}
 	for is.Scan() {
-		idx.pos += entryWidth
+		idx.pos += entWidth
 	}
 	return idx, is.Entry(), nil
 }
 
-func (i *index) Read(offset uint64) (e entry, err error) {
-	pos := offset * entryWidth
-	if uint64(len(i.mmap)) < pos+entryWidth {
+// Read takes in an offset relative to the index's base offset and returns the associated index
+// entry, i.e. 0 is always the index's first entry.
+func (i *index) Read(offset uint32) (e entry, err error) {
+	pos := offset * entWidth
+	if uint32(len(i.mmap)) < pos+entWidth {
 		return e, io.EOF
 	}
-	p := make([]byte, entryWidth)
-	copy(p, i.mmap[pos:pos+entryWidth])
+	p := make([]byte, entWidth)
+	copy(p, i.mmap[pos:pos+entWidth])
 	b := bytes.NewReader(p)
-	if err = binary.Read(b, encoding, &e); err != nil {
+	if err = binary.Read(b, enc, &e); err != nil {
 		return e, err
 	}
 	if e.IsZero() {
@@ -77,15 +79,15 @@ func (i *index) Read(offset uint64) (e entry, err error) {
 }
 
 func (i *index) Write(e entry) error {
-	if uint64(len(i.mmap)) < i.pos+entryWidth {
-		fmt.Println("heyheyhey", len(i.mmap), i.pos+entryWidth)
+	if uint64(len(i.mmap)) < i.pos+entWidth {
+		fmt.Println("heyheyhey", len(i.mmap), i.pos+entWidth)
 		return io.EOF
 	}
 	b := new(bytes.Buffer)
-	if err := binary.Write(b, encoding, e); err != nil {
+	if err := binary.Write(b, enc, e); err != nil {
 		return err
 	}
-	n := copy(i.mmap[i.pos:i.pos+entryWidth], b.Bytes())
+	n := copy(i.mmap[i.pos:i.pos+entWidth], b.Bytes())
 	i.pos += uint64(n)
 	return nil
 }
@@ -93,7 +95,7 @@ func (i *index) Write(e entry) error {
 type indexScanner struct {
 	// idx must be set
 	idx *index
-	off uint64
+	off uint32
 	cur entry
 	err error
 }

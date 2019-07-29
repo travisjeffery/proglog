@@ -18,7 +18,7 @@ func TestSegment(t *testing.T) {
 
 	s, err := newSegment(dir, 16, Config{
 		MaxSegmentBytes: 1024,
-		MaxIndexBytes:   entryWidth * 2,
+		MaxIndexBytes:   entWidth * 2,
 	})
 	req.NoError(t, err)
 	req.Equal(t, uint64(16), s.nextOffset)

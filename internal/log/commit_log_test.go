@@ -12,8 +12,8 @@ import (
 )
 
 func TestCommitLog(t *testing.T) {
-	for scenario, fn := range map[string]func(t *testing.T, log *log.Log){
-		"append and read a batch succeeds": func(t *testing.T, log *log.Log) {
+	for scenario, fn := range map[string]func(t *testing.T, log *log.CommitLog){
+		"append and read a batch succeeds": func(t *testing.T, log *log.CommitLog) {
 			append := &api.RecordBatch{
 				Records: []*api.Record{{
 					Value: []byte("hello world"),
@@ -34,7 +34,7 @@ func TestCommitLog(t *testing.T) {
 				t.Fatalf("got read: %v, want: %v", read, append)
 			}
 		},
-		"offset out of range error": func(t *testing.T, log *log.Log) {
+		"offset out of range error": func(t *testing.T, log *log.CommitLog) {
 			read, err := log.ReadBatch(0)
 			if read != nil {
 				t.Fatalf("expected read to be nil")
@@ -47,7 +47,7 @@ func TestCommitLog(t *testing.T) {
 				t.Fatalf("got offset: %d, want: %d", apiErr.Offset, 0)
 			}
 		},
-		"init with existing segments": func(t *testing.T, o *log.Log) {
+		"init with existing segments": func(t *testing.T, o *log.CommitLog) {
 			append := &api.RecordBatch{
 				Records: []*api.Record{{
 					Value: []byte("hello world"),
@@ -57,7 +57,7 @@ func TestCommitLog(t *testing.T) {
 				_, _ = o.AppendBatch(append)
 			}
 
-			n, err := log.NewLog(o.Dir, o.Config)
+			n, err := log.NewCommitLog(o.Dir, o.Config)
 			req.NoError(t, err)
 			off, err := n.AppendBatch(append)
 			req.NoError(t, err)
@@ -69,7 +69,7 @@ func TestCommitLog(t *testing.T) {
 			req.NoError(t, err)
 			defer os.RemoveAll(base)
 
-			log, err := log.NewLog(base, log.Config{
+			log, err := log.NewCommitLog(base, log.Config{
 				MaxSegmentBytes: 32,
 			})
 			req.NoError(t, err)

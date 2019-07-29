@@ -11,10 +11,6 @@ const (
 	indexSuffix = ".index"
 )
 
-func trimSuffix(name string) string {
-	return
-}
-
 type segment struct {
 	log                    *log
 	index                  *index
@@ -40,7 +36,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		return nil, err
 	}
 	if err = indexFile.Truncate(
-		int64(nearestMultiple(c.MaxIndexBytes, entryWidth)),
+		int64(nearestMultiple(c.MaxIndexBytes, entWidth)),
 	); err != nil {
 		return nil, err
 	}
@@ -51,7 +47,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	if lastEntry.IsZero() {
 		s.nextOffset = baseOffset
 	} else {
-		s.nextOffset = lastEntry.Off + 1
+		s.nextOffset = baseOffset + uint64(lastEntry.Off) + 1
 	}
 	return s, nil
 }
@@ -64,7 +60,7 @@ func (s *segment) Append(p []byte) (nextOffset, size uint64, err error) {
 	}
 	if err = s.index.Write(entry{
 		// index offsets are relative to base offset
-		Off: s.nextOffset - s.baseOffset,
+		Off: uint32(s.nextOffset - uint64(s.baseOffset)),
 		Pos: pos,
 		Len: n,
 	}); err != nil {
@@ -75,7 +71,7 @@ func (s *segment) Append(p []byte) (nextOffset, size uint64, err error) {
 }
 
 func (s *segment) FindIndex(off uint64) (entry, error) {
-	return s.index.Read(off - s.baseOffset)
+	return s.index.Read(uint32(off - s.baseOffset))
 }
 
 func (s *segment) ReadAt(p []byte, pos uint64) (int, error) {

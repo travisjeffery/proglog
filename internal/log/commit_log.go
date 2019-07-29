@@ -102,7 +102,7 @@ func (l *CommitLog) ReadBatch(offset uint64) (*api.RecordBatch, error) {
 		return nil, err
 	}
 	p := make([]byte, entry.Len)
-	_, err = s.ReadAt(p, entry.Pos)
+	_, err = s.ReadAt(p, uint64(entry.Pos))
 	if err != nil {
 		return nil, err
 	}

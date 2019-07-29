@@ -19,7 +19,7 @@ func TestIndex(t *testing.T) {
 
 	_, e, err := newIndex(f)
 	req.NoError(t, err)
-	req.Equal(t, uint64(1), e.Off)
+	req.Equal(t, uint32(1), e.Off)
 }
 
 func testIndex(t *testing.T, f *os.File) {
@@ -49,7 +49,7 @@ func testIndex(t *testing.T, f *os.File) {
 		req.NoError(t, is.Err())
 	}
 
-	_, err = idx.Read(uint64(len(entries)))
+	_, err = idx.Read(uint32(len(entries)))
 	req.Equal(t, io.EOF, err)
 	req.False(t, is.Scan())
 	req.Equal(t, io.EOF, is.Err())

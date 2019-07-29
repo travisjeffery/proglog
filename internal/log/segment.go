@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 )
 
 const (
@@ -13,7 +12,7 @@ const (
 )
 
 func trimSuffix(name string) string {
-	return strings.TrimSuffix(name, path.Ext(name))
+	return
 }
 
 type segment struct {

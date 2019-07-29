@@ -2,8 +2,10 @@ package log
 
 import (
 	"io/ioutil"
+	"path"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
@@ -42,7 +44,8 @@ func NewCommitLog(dir string, c Config) (*CommitLog, error) {
 	}
 	var baseOffsets []uint64
 	for _, file := range files {
-		off, _ := strconv.ParseUint(trimSuffix(file.Name()), 10, 0)
+		offStr := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
+		off, _ := strconv.ParseUint(offStr, 10, 0)
 		baseOffsets = append(baseOffsets, off)
 	}
 	sort.Slice(baseOffsets, func(i, j int) bool {

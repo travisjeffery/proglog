@@ -10,8 +10,9 @@ import (
 
 var (
 	enc             = binary.BigEndian
+	offWidth uint64 = 4
 	posWidth uint64 = 8
-	entWidth        = posWidth
+	entWidth        = offWidth + posWidth
 )
 
 type index struct {
@@ -20,7 +21,6 @@ type index struct {
 	pos  uint64
 }
 
-// nextIndex returns the created index and the offset of the last entry.
 func newIndex(f *os.File, c Config) (*index, error) {
 	idx := &index{
 		file: f,
@@ -62,7 +62,8 @@ func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
 	}
 	p := make([]byte, entWidth)
 	copy(p, i.mmap[pos:pos+entWidth])
-	pos = enc.Uint64(p)
+	out = enc.Uint32(p[:offWidth])
+	pos = enc.Uint64(p[offWidth:])
 	return out, pos, nil
 }
 
@@ -71,17 +72,18 @@ func (i *index) Write(off uint32, pos uint64) error {
 		return io.EOF
 	}
 	p := make([]byte, entWidth)
-	enc.PutUint64(p, pos)
+	enc.PutUint32(p[:offWidth], off)
+	enc.PutUint64(p[offWidth:], pos)
 	copy(i.mmap[i.pos:i.pos+entWidth], p)
 	i.pos += uint64(entWidth)
 	return nil
 }
 
 func (i *index) Close() error {
-	if err := i.file.Sync(); err != nil {
+	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
 		return err
 	}
-	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
+	if err := i.file.Sync(); err != nil {
 		return err
 	}
 	if err := i.file.Truncate(int64(i.pos)); err != nil {

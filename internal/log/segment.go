@@ -77,7 +77,7 @@ func (s *segment) Read(off uint64) ([]byte, error) {
 
 func (s *segment) IsMaxed() bool {
 	return s.log.size >= s.config.Segment.MaxLogBytes ||
-		s.index.pos >= s.config.Segment.MaxIndexBytes
+		s.index.size >= s.config.Segment.MaxIndexBytes
 }
 
 func (s *segment) Close() error {

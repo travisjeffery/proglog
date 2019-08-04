@@ -18,7 +18,7 @@ var (
 type index struct {
 	file *os.File
 	mmap gommap.MMap
-	pos  uint64
+	size  uint64
 }
 
 func newIndex(f *os.File, c Config) (*index, error) {
@@ -29,7 +29,7 @@ func newIndex(f *os.File, c Config) (*index, error) {
 	if err != nil {
 		return nil, err
 	}
-	idx.pos = uint64(fi.Size())
+	idx.size = uint64(fi.Size())
 	if err = os.Truncate(
 		f.Name(), int64(c.Segment.MaxIndexBytes),
 	); err != nil {
@@ -48,34 +48,30 @@ func newIndex(f *os.File, c Config) (*index, error) {
 // Read returns the log's offset and the log's position in the log file, the given log offset must be relative to the
 // base offset. For example, 0 always returns the first entry in index. -1 returns the last entry.
 func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
-	if i.pos == 0 {
+	if i.size == 0 {
 		return 0, 0, io.EOF
 	}
 	if in == -1 {
-		out = uint32((i.pos / entWidth) - 1)
+		out = uint32((i.size / entWidth) - 1)
 	} else {
 		out = uint32(in)
 	}
 	pos = uint64(out) * entWidth
-	if i.pos < pos+entWidth {
+	if i.size < pos+entWidth {
 		return 0, 0, io.EOF
 	}
-	p := make([]byte, entWidth)
-	copy(p, i.mmap[pos:pos+entWidth])
-	out = enc.Uint32(p[:offWidth])
-	pos = enc.Uint64(p[offWidth:])
+	out = enc.Uint32(i.mmap[pos : pos+offWidth])
+	pos = enc.Uint64(i.mmap[pos+offWidth : pos+entWidth])
 	return out, pos, nil
 }
 
 func (i *index) Write(off uint32, pos uint64) error {
-	if uint64(len(i.mmap)) < i.pos+entWidth {
+	if uint64(len(i.mmap)) < i.size+entWidth {
 		return io.EOF
 	}
-	p := make([]byte, entWidth)
-	enc.PutUint32(p[:offWidth], off)
-	enc.PutUint64(p[offWidth:], pos)
-	copy(i.mmap[i.pos:i.pos+entWidth], p)
-	i.pos += uint64(entWidth)
+	enc.PutUint32(i.mmap[i.size:i.size+offWidth], off)
+	enc.PutUint64(i.mmap[i.size+offWidth:i.size+entWidth], pos)
+	i.size += uint64(entWidth)
 	return nil
 }
 
@@ -86,7 +82,7 @@ func (i *index) Close() error {
 	if err := i.file.Sync(); err != nil {
 		return err
 	}
-	if err := i.file.Truncate(int64(i.pos)); err != nil {
+	if err := i.file.Truncate(int64(i.size)); err != nil {
 		return err
 	}
 	return i.file.Close()

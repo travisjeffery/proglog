@@ -10,6 +10,10 @@ const (
 	lenWidth = 8
 )
 
+var (
+	size = make([]byte, lenWidth)
+)
+
 type log struct {
 	*os.File
 	size uint64
@@ -47,21 +51,16 @@ func (l *log) Append(p []byte) (uint64, uint64, error) {
 }
 
 func (l *log) ReadAt(pos uint64) ([]byte, error) {
-	var size uint64
-	var p []byte
-
-	p = make([]byte, lenWidth)
-	if _, err := l.File.ReadAt(p, int64(pos)); err != nil {
-		return nil, err
-	}
-	size = enc.Uint64(p)
-
-	p = make([]byte, size)
-	if _, err := l.File.ReadAt(p, int64(pos+lenWidth)); err != nil {
+	if _, err := l.File.ReadAt(size, int64(pos)); err != nil {
 		return nil, err
 	}
 
-	return p, nil
+	b := make([]byte, enc.Uint64(size))
+	if _, err := l.File.ReadAt(b, int64(pos+lenWidth)); err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
 func (l *log) Size() uint64 {

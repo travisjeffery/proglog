@@ -84,5 +84,8 @@ func (i *index) Close() error {
 	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
 		return err
 	}
-	return i.file.Truncate(int64(i.pos))
+	if err := i.file.Truncate(int64(i.pos)); err != nil {
+		return err
+	}
+	return i.file.Close()
 }

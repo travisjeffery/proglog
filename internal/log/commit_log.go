@@ -23,16 +23,18 @@ type CommitLog struct {
 }
 
 type Config struct {
-	MaxSegmentBytes uint64
-	MaxIndexBytes   uint64
+	Segment struct {
+		MaxLogBytes   uint64
+		MaxIndexBytes uint64
+	}
 }
 
 func NewCommitLog(dir string, c Config) (*CommitLog, error) {
-	if c.MaxSegmentBytes == 0 {
-		c.MaxSegmentBytes = 1024
+	if c.Segment.MaxLogBytes == 0 {
+		c.Segment.MaxLogBytes = 1024
 	}
-	if c.MaxIndexBytes == 0 {
-		c.MaxIndexBytes = 1024
+	if c.Segment.MaxIndexBytes == 0 {
+		c.Segment.MaxIndexBytes = 1024
 	}
 	l := &CommitLog{
 		Dir:    dir,
@@ -73,42 +75,47 @@ func (l *CommitLog) AppendBatch(batch *api.RecordBatch) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	curr := l.activeSegment.nextOffset
-	next, _, err := l.activeSegment.Append(p)
+	off, err := l.activeSegment.Append(p)
 	if err != nil {
 		return 0, err
 	}
 	if l.activeSegment.IsMaxed() {
-		err = l.newSegment(next)
+		err = l.newSegment(off + 1)
 	}
-	return curr, err
+	return off, err
 }
 
-func (l *CommitLog) ReadBatch(offset uint64) (*api.RecordBatch, error) {
+func (l *CommitLog) ReadBatch(off uint64) (*api.RecordBatch, error) {
 	l.RLock()
 	defer l.RUnlock()
 	var s *segment
 	for _, segment := range l.segments {
-		if segment.baseOffset <= offset {
+		if segment.baseOffset <= off {
 			s = segment
 			break
 		}
 	}
-	if s == nil || s.nextOffset <= offset {
-		return nil, api.ErrOffsetOutOfRange{Offset: offset}
+	if s == nil || s.nextOffset <= off {
+		return nil, api.ErrOffsetOutOfRange{Offset: off}
 	}
-	entry, err := s.FindIndex(offset)
-	if err != nil {
-		return nil, err
-	}
-	p := make([]byte, entry.Len)
-	_, err = s.ReadAt(p, uint64(entry.Pos))
+	p, err := s.Read(off)
 	if err != nil {
 		return nil, err
 	}
 	batch := &api.RecordBatch{}
 	err = proto.Unmarshal(p, batch)
 	return batch, err
+}
+
+func (l *CommitLog) Close() error {
+	l.Lock()
+	defer l.Unlock()
+	for _, segment := range l.segments {
+		if err := segment.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (l *CommitLog) newSegment(off uint64) error {

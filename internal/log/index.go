@@ -1,9 +1,7 @@
 package log
 
 import (
-	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"os"
 
@@ -11,27 +9,10 @@ import (
 )
 
 var (
-	enc = binary.BigEndian
+	enc             = binary.BigEndian
+	posWidth uint64 = 8
+	entWidth        = posWidth
 )
-
-const (
-	offWidth = 4
-	posWidth = 8
-	lenWidth = 8
-	entWidth = offWidth + posWidth + lenWidth
-)
-
-type entry struct {
-	Off uint32
-	Pos uint64
-	Len uint64
-}
-
-func (e entry) IsZero() bool {
-	return e.Off == 0 &&
-		e.Pos == 0 &&
-		e.Len == 0
-}
 
 type index struct {
 	file *os.File
@@ -39,84 +20,69 @@ type index struct {
 	pos  uint64
 }
 
-// nextIndex returns the created index and its last entry.
-func newIndex(f *os.File) (*index, entry, error) {
+// nextIndex returns the created index and the offset of the last entry.
+func newIndex(f *os.File, c Config) (*index, error) {
 	idx := &index{
 		file: f,
 	}
-	var err error
+	fi, err := os.Stat(f.Name())
+	if err != nil {
+		return nil, err
+	}
+	idx.pos = uint64(fi.Size())
+	if err = os.Truncate(
+		f.Name(), int64(c.Segment.MaxIndexBytes),
+	); err != nil {
+		return nil, err
+	}
 	if idx.mmap, err = gommap.Map(
 		idx.file.Fd(),
 		gommap.PROT_READ|gommap.PROT_WRITE,
 		gommap.MAP_SHARED,
 	); err != nil {
-		return nil, entry{}, err
+		return nil, err
 	}
-	is := &indexScanner{idx: idx}
-	for is.Scan() {
-		idx.pos += entWidth
-	}
-	return idx, is.Entry(), nil
+	return idx, nil
 }
 
-// Read takes in an offset relative to the index's base offset and returns the associated index
-// entry, i.e. 0 is always the index's first entry.
-func (i *index) Read(offset uint32) (e entry, err error) {
-	pos := offset * entWidth
-	if uint32(len(i.mmap)) < pos+entWidth {
-		return e, io.EOF
+// Read returns the log's offset and the log's position in the log file, the given log offset must be relative to the
+// base offset. For example, 0 always returns the first entry in index. -1 returns the last entry.
+func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
+	if i.pos == 0 {
+		return 0, 0, io.EOF
+	}
+	if in == -1 {
+		out = uint32((i.pos / entWidth) - 1)
+	} else {
+		out = uint32(in)
+	}
+	pos = uint64(out) * entWidth
+	if i.pos < pos+entWidth {
+		return 0, 0, io.EOF
 	}
 	p := make([]byte, entWidth)
 	copy(p, i.mmap[pos:pos+entWidth])
-	b := bytes.NewReader(p)
-	if err = binary.Read(b, enc, &e); err != nil {
-		return e, err
-	}
-	if e.IsZero() {
-		return e, io.EOF
-	}
-	return e, nil
+	pos = enc.Uint64(p)
+	return out, pos, nil
 }
 
-func (i *index) Write(e entry) error {
+func (i *index) Write(off uint32, pos uint64) error {
 	if uint64(len(i.mmap)) < i.pos+entWidth {
-		fmt.Println("heyheyhey", len(i.mmap), i.pos+entWidth)
 		return io.EOF
 	}
-	b := new(bytes.Buffer)
-	if err := binary.Write(b, enc, e); err != nil {
-		return err
-	}
-	n := copy(i.mmap[i.pos:i.pos+entWidth], b.Bytes())
-	i.pos += uint64(n)
+	p := make([]byte, entWidth)
+	enc.PutUint64(p, pos)
+	copy(i.mmap[i.pos:i.pos+entWidth], p)
+	i.pos += uint64(entWidth)
 	return nil
 }
 
-type indexScanner struct {
-	// idx must be set
-	idx *index
-	off uint32
-	cur entry
-	err error
-}
-
-func (is *indexScanner) Scan() bool {
-	var e entry
-	if is.err != nil {
-		return false
+func (i *index) Close() error {
+	if err := i.file.Sync(); err != nil {
+		return err
 	}
-	if e, is.err = is.idx.Read(is.off); is.err != nil {
-		return false
+	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
+		return err
 	}
-	is.cur = e
-	is.off++
-	return true
-}
-
-func (is *indexScanner) Entry() entry {
-	return is.cur
-}
-
-func (is *indexScanner) Err() error {
-	return is.err
+	return i.file.Truncate(int64(i.pos))
 }

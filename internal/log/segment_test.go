@@ -14,35 +14,37 @@ func TestSegment(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	want := []byte("hello world")
-	l := uint64(len(want))
 
-	s, err := newSegment(dir, 16, Config{
-		MaxSegmentBytes: 1024,
-		MaxIndexBytes:   entWidth * 2,
-	})
+	c := Config{}
+	c.Segment.MaxLogBytes = 1024
+	c.Segment.MaxIndexBytes = entWidth * 3
+
+	s, err := newSegment(dir, 16, c)
 	req.NoError(t, err)
-	req.Equal(t, uint64(16), s.nextOffset)
+	req.Equal(t, uint64(16), s.nextOffset, s.nextOffset)
 	req.False(t, s.IsMaxed())
 
-	for i := uint64(1); i < 3; i++ {
-		off, size, err := s.Append(want)
+	for i := uint64(0); i < 3; i++ {
+		off, err := s.Append(want)
 		req.NoError(t, err)
-		req.Equal(t, l*i, size)
 		req.Equal(t, 16+i, off)
 
-		e, err := s.FindIndex(off - 1)
-		req.NoError(t, err)
-		req.Equal(t, i-1, e.Off)
-		req.Equal(t, e.Pos, size-l)
-		req.Equal(t, e.Len, l)
-
-		got := make([]byte, e.Len)
-		_, err = s.ReadAt(got, e.Pos)
+		got, err := s.Read(off)
 		req.NoError(t, err)
 		req.Equal(t, want, got)
 	}
 
-	_, _, err = s.Append(want)
+	_, err = s.Append(want)
 	req.Equal(t, io.EOF, err)
+
+	// is maxed when index is max size
+	req.True(t, s.IsMaxed())
+
+	// is maxed when log is max size
+	c.Segment.MaxLogBytes = uint64(len(want) * 3)
+	c.Segment.MaxIndexBytes = 1024
+
+	s, err = newSegment(dir, 16, c)
+	req.NoError(t, err)
 	req.True(t, s.IsMaxed())
 }

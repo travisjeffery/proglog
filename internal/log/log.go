@@ -1,7 +1,13 @@
 package log
 
 import (
+	"bytes"
+	"encoding/binary"
 	"os"
+)
+
+const (
+	lenWidth = 8
 )
 
 type log struct {
@@ -25,12 +31,37 @@ func newLog(f *os.File) (*log, error) {
 // the number of bytes written.
 func (l *log) Append(p []byte) (uint64, uint64, error) {
 	pos := l.size
-	n, err := l.WriteAt(p, int64(pos))
+	var buf bytes.Buffer
+	if err := binary.Write(&buf, enc, uint64(len(p))); err != nil {
+		return 0, 0, err
+	}
+	if _, err := buf.Write(p); err != nil {
+		return 0, 0, err
+	}
+	n, err := l.WriteAt(buf.Bytes(), int64(pos))
 	if err != nil {
 		return 0, 0, err
 	}
 	l.size += uint64(n)
 	return uint64(n), pos, nil
+}
+
+func (l *log) ReadAt(pos uint64) ([]byte, error) {
+	var size uint64
+	var p []byte
+
+	p = make([]byte, lenWidth)
+	if _, err := l.File.ReadAt(p, int64(pos)); err != nil {
+		return nil, err
+	}
+	size = enc.Uint64(p)
+
+	p = make([]byte, size)
+	if _, err := l.File.ReadAt(p, int64(pos+lenWidth)); err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
 
 func (l *log) Size() uint64 {

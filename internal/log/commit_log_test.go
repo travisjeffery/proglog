@@ -57,6 +57,8 @@ func TestCommitLog(t *testing.T) {
 				_, _ = o.AppendBatch(append)
 			}
 
+			req.NoError(t, o.Close())
+
 			n, err := log.NewCommitLog(o.Dir, o.Config)
 			req.NoError(t, err)
 			off, err := n.AppendBatch(append)
@@ -69,9 +71,9 @@ func TestCommitLog(t *testing.T) {
 			req.NoError(t, err)
 			defer os.RemoveAll(base)
 
-			log, err := log.NewCommitLog(base, log.Config{
-				MaxSegmentBytes: 32,
-			})
+			c := log.Config{}
+			c.Segment.MaxLogBytes = 32
+			log, err := log.NewCommitLog(base, c)
 			req.NoError(t, err)
 
 			fn(t, log)

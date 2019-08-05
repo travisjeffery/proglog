@@ -1,21 +1,14 @@
 package log
 
 import (
-	"bytes"
+	"bufio"
 	"encoding/binary"
 	"os"
 )
 
-const (
-	lenWidth = 8
-)
-
-var (
-	size = make([]byte, lenWidth)
-)
-
 type log struct {
 	*os.File
+	buf  *bufio.Writer
 	size uint64
 }
 
@@ -28,38 +21,41 @@ func newLog(f *os.File) (*log, error) {
 	return &log{
 		File: f,
 		size: size,
+		buf:  bufio.NewWriter(f),
 	}, nil
 }
 
 // Append the bytes to the end of the log file and returns the position the bytes were written and
 // the number of bytes written.
-func (l *log) Append(p []byte) (uint64, uint64, error) {
-	pos := l.size
-	var buf bytes.Buffer
-	if err := binary.Write(&buf, enc, uint64(len(p))); err != nil {
+func (l *log) Append(p []byte) (n uint64, pos uint64, err error) {
+	pos = l.size
+	if err := binary.Write(l.buf, enc, uint64(len(p))); err != nil {
 		return 0, 0, err
 	}
-	if _, err := buf.Write(p); err != nil {
-		return 0, 0, err
-	}
-	n, err := l.WriteAt(buf.Bytes(), int64(pos))
+	w, err := l.buf.Write(p)
 	if err != nil {
 		return 0, 0, err
 	}
-	l.size += uint64(n)
-	return uint64(n), pos, nil
+	w += lenWidth
+	l.size += uint64(w)
+	return uint64(w), pos, nil
 }
 
+const lenWidth = 8
+
+var size = make([]byte, lenWidth)
+
 func (l *log) ReadAt(pos uint64) ([]byte, error) {
+	if err := l.buf.Flush(); err != nil {
+		return nil, err
+	}
 	if _, err := l.File.ReadAt(size, int64(pos)); err != nil {
 		return nil, err
 	}
-
 	b := make([]byte, enc.Uint64(size))
 	if _, err := l.File.ReadAt(b, int64(pos+lenWidth)); err != nil {
 		return nil, err
 	}
-
 	return b, nil
 }
 

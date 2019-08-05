@@ -1,8 +1,8 @@
 package log
 
 import (
-	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 
 	req "github.com/stretchr/testify/require"
@@ -14,7 +14,12 @@ var (
 )
 
 func TestLog(t *testing.T) {
-	f, err := ioutil.TempFile(os.TempDir(), "log_test")
+	name := path.Join(os.TempDir(), "log_test")
+	f, err := os.OpenFile(
+		name,
+		os.O_RDWR|os.O_CREATE|os.O_EXCL|os.O_APPEND,
+		0600,
+	)
 	req.NoError(t, err)
 	defer os.Remove(f.Name())
 

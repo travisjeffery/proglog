@@ -49,7 +49,6 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	return s, nil
 }
 
-// Append the bytes to the segment and return the log's offset and total bytes in the segment.
 func (s *segment) Append(p []byte) (offset uint64, err error) {
 	_, pos, err := s.log.Append(p)
 	if err != nil {

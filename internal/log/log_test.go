@@ -1,56 +1,82 @@
-package log
+package log_test
 
 import (
+	"io/ioutil"
 	"os"
-	"path"
+	"reflect"
 	"testing"
 
 	req "github.com/stretchr/testify/require"
+	api "github.com/travisjeffery/proglog/api/v1"
+	"github.com/travisjeffery/proglog/internal/log"
 )
 
-var (
-	write = []byte("hello world")
-	width = uint64(len(write)) + lenWidth
-)
+func TestCommitLog(t *testing.T) {
+	for scenario, fn := range map[string]func(t *testing.T, log *log.Log){
+		"append and read a batch succeeds": func(t *testing.T, log *log.Log) {
+			append := &api.RecordBatch{
+				Records: []*api.Record{{
+					Value: []byte("hello world"),
+				}},
+			}
+			off, err := log.Append(append)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if off != 0 {
+				t.Fatalf("got off: %d, want: %d", off, 0)
+			}
+			read, err := log.Read(off)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(append, read) {
+				t.Fatalf("got read: %v, want: %v", read, append)
+			}
+		},
+		"offset out of range error": func(t *testing.T, log *log.Log) {
+			read, err := log.Read(0)
+			if read != nil {
+				t.Fatalf("expected read to be nil")
+			}
+			apiErr, ok := err.(api.ErrOffsetOutOfRange)
+			if !ok {
+				t.Fatalf("err type not ErrOffsetOutOfRange")
+			}
+			if apiErr.Offset != 0 {
+				t.Fatalf("got offset: %d, want: %d", apiErr.Offset, 0)
+			}
+		},
+		"init with existing segments": func(t *testing.T, o *log.Log) {
+			append := &api.RecordBatch{
+				Records: []*api.Record{{
+					Value: []byte("hello world"),
+				}},
+			}
+			for i := 0; i < 3; i++ {
+				_, _ = o.Append(append)
+			}
 
-func TestLog(t *testing.T) {
-	name := path.Join(os.TempDir(), "log_test")
-	f, err := os.OpenFile(
-		name,
-		os.O_RDWR|os.O_CREATE|os.O_EXCL|os.O_APPEND,
-		0600,
-	)
-	req.NoError(t, err)
-	defer os.Remove(f.Name())
+			req.NoError(t, o.Close())
 
-	l, err := newLog(f)
-	req.NoError(t, err)
-	req.Equal(t, uint64(0), l.Size())
+			n, err := log.NewLog(o.Dir, o.Config)
+			req.NoError(t, err)
+			off, err := n.Append(append)
+			req.NoError(t, err)
+			req.Equal(t, uint64(3), off)
+		},
+	} {
+		t.Run(scenario, func(t *testing.T) {
+			base, err := ioutil.TempDir("", "store-test")
+			req.NoError(t, err)
+			defer os.RemoveAll(base)
 
-	testAppend(t, l)
-	testRead(t, l)
+			c := log.Config{}
+			c.Segment.MaxStoreBytes = 32
+			log, err := log.NewLog(base, c)
+			req.NoError(t, err)
 
-	l, _ = newLog(f)
-	testRead(t, l)
-}
-
-func testAppend(t *testing.T, l *log) {
-	for i := uint64(1); i < 4; i++ {
-		n, pos, err := l.Append(write)
-		if err != nil {
-			t.Fatalf("err: %s", err)
-		}
-		req.Equal(t, pos+n, width*i)
-		req.Equal(t, l.Size(), width*i)
-	}
-}
-
-func testRead(t *testing.T, l *log) {
-	var pos uint64
-	for i := uint64(1); i < 4; i++ {
-		read, err := l.ReadAt(pos)
-		req.NoError(t, err)
-		req.Equal(t, write, read)
-		pos += width
+			fn(t, log)
+		})
 	}
 }

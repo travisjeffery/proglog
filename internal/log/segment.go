@@ -7,7 +7,7 @@ import (
 )
 
 type segment struct {
-	log                    *log
+	store                  *store
 	index                  *index
 	baseOffset, nextOffset uint64
 	config                 Config
@@ -19,15 +19,15 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		config:     c,
 	}
 	var err error
-	logFile, err := os.OpenFile(
-		path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".log")),
-		os.O_RDWR|os.O_CREATE,
+	storeFile, err := os.OpenFile(
+		path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".store")),
+		os.O_RDWR|os.O_CREATE|os.O_APPEND,
 		0644,
 	)
 	if err != nil {
 		return nil, err
 	}
-	if s.log, err = newLog(logFile); err != nil {
+	if s.store, err = newStore(storeFile); err != nil {
 		return nil, err
 	}
 	indexFile, err := os.OpenFile(
@@ -50,7 +50,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 }
 
 func (s *segment) Append(p []byte) (offset uint64, err error) {
-	_, pos, err := s.log.Append(p)
+	_, pos, err := s.store.Append(p)
 	if err != nil {
 		return 0, err
 	}
@@ -71,11 +71,11 @@ func (s *segment) Read(off uint64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.log.ReadAt(pos)
+	return s.store.ReadAt(pos)
 }
 
 func (s *segment) IsMaxed() bool {
-	return s.log.size >= s.config.Segment.MaxLogBytes ||
+	return s.store.size >= s.config.Segment.MaxStoreBytes ||
 		s.index.size >= s.config.Segment.MaxIndexBytes
 }
 
@@ -83,7 +83,7 @@ func (s *segment) Close() error {
 	if err := s.index.Close(); err != nil {
 		return err
 	}
-	if err := s.log.Close(); err != nil {
+	if err := s.store.Close(); err != nil {
 		return err
 	}
 	return nil

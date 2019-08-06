@@ -209,7 +209,7 @@ func testSetup(t *testing.T, fn func(*Config)) (
 	dir, err := ioutil.TempDir("", "server-test")
 	req.NoError(t, err)
 
-	clog, err := log.NewCommitLog(dir, log.Config{})
+	clog, err := log.NewLog(dir, log.Config{})
 	req.NoError(t, err)
 
 	config = &Config{

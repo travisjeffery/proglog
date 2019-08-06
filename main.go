@@ -47,7 +47,7 @@ func main() {
 	clientOptions := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
 
 	config := &server.Config{
-		CommitLog:     &clog.CommitLog{},
+		CommitLog:     &clog.Log{},
 		ClientOptions: clientOptions,
 	}
 

@@ -16,7 +16,7 @@ func TestSegment(t *testing.T) {
 	want := []byte("hello world")
 
 	c := Config{}
-	c.Segment.MaxLogBytes = 1024
+	c.Segment.MaxStoreBytes = 1024
 	c.Segment.MaxIndexBytes = entWidth * 3
 
 	s, err := newSegment(dir, 16, c)
@@ -40,8 +40,8 @@ func TestSegment(t *testing.T) {
 	// is maxed when index is max size
 	req.True(t, s.IsMaxed())
 
-	// is maxed when log is max size
-	c.Segment.MaxLogBytes = uint64(len(want) * 3)
+	// is maxed when store is max size
+	c.Segment.MaxStoreBytes = uint64(len(want) * 3)
 	c.Segment.MaxIndexBytes = 1024
 
 	s, err = newSegment(dir, 16, c)

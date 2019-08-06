@@ -26,10 +26,10 @@ type Config struct {
 	ClientOptions  []grpc.DialOption
 }
 
-// CommitLog definese the interface the server relies on.
+// Log definese the interface the server relies on.
 type CommitLog interface {
-	AppendBatch(*api.RecordBatch) (uint64, error)
-	ReadBatch(uint64) (*api.RecordBatch, error)
+	Append(*api.RecordBatch) (uint64, error)
+	Read(uint64) (*api.RecordBatch, error)
 }
 
 type grpcServer struct {
@@ -125,7 +125,7 @@ func (s *grpcServer) setupSerf() (err error) {
 }
 
 func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error) {
-	offset, err := s.commitlog.AppendBatch(req.RecordBatch)
+	offset, err := s.commitlog.Append(req.RecordBatch)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 }
 
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api.ConsumeResponse, error) {
-	batch, err := s.commitlog.ReadBatch(req.Offset)
+	batch, err := s.commitlog.Read(req.Offset)
 	if err != nil {
 		return nil, err
 	}

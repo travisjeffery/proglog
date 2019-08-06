@@ -44,7 +44,7 @@ func TestIndex(t *testing.T) {
 	_ = idx.Close()
 
 	// index should build its state from the existing file
-	f, _ = os.OpenFile(f.Name(), os.O_RDWR|os.O_EXCL, 0600)
+	f, _ = os.OpenFile(f.Name(), os.O_RDWR, 0600)
 	idx, err = newIndex(f, c)
 	req.NoError(t, err)
 	off, pos, err := idx.Read(-1)

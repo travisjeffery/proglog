@@ -45,7 +45,7 @@ func newIndex(f *os.File, c Config) (*index, error) {
 	return idx, nil
 }
 
-// Read returns the log's offset and the log's position in the log file, the given log offset must be relative to the
+// Read returns the store's offset and the store's position in the store file, the given store offset must be relative to the
 // base offset. For example, 0 always returns the first entry in index. -1 returns the last entry.
 func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
 	if i.size == 0 {

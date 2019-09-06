@@ -22,3 +22,5 @@ require (
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 	upspin.io v0.0.0-20190213074607-15046f4f3b2a // indirect
 )
+
+go 1.13

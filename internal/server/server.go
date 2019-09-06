@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net"
-	"sync"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -33,10 +32,8 @@ type CommitLog interface {
 }
 
 type grpcServer struct {
-	mu         sync.Mutex
 	config     *Config
 	commitlog  CommitLog
-	logger     *log.Logger
 	serf       *serf.Serf
 	events     chan serf.Event
 	replicator *replicator

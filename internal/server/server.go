@@ -39,7 +39,8 @@ func NewAPI(config *Config) (*grpc.Server, error) {
 	return gsrv, nil
 }
 
-func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error) {
+func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
+	*api.ProduceResponse, error) {
 	offset, err := s.CommitLog.AppendBatch(req.RecordBatch)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,8 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api
 	return &api.ProduceResponse{FirstOffset: offset}, nil
 }
 
-func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api.ConsumeResponse, error) {
+func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
+	*api.ConsumeResponse, error) {
 	batch, err := s.CommitLog.ReadBatch(req.Offset)
 	if err != nil {
 		return nil, err

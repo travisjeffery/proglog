@@ -2,11 +2,10 @@ module github.com/travisjeffery/proglog
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/gogo/protobuf v1.2.1
+	github.com/gogo/protobuf v1.3.0
 	github.com/golang/protobuf v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/hashicorp/serf v0.8.3
-	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/travisjeffery/go-dynaport v0.0.0-20171218080632-f8768fb615d5

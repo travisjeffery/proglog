@@ -2,39 +2,41 @@ package server
 
 import (
 	"context"
+	"io/ioutil"
 	"net"
-	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	req "github.com/stretchr/testify/require"
 	api "github.com/travisjeffery/proglog/api/v1"
+	"github.com/travisjeffery/proglog/internal/log"
 	"google.golang.org/grpc"
 )
 
 func TestServer(t *testing.T) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	conn, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
-	require.NoError(t, err)
-	defer conn.Close()
-
-	c := api.NewLogClient(conn)
-
-	config := &Config{
-		CommitLog: make(mocklog),
+	for scenario, fn := range map[string]func(t *testing.T, client api.LogClient, config *Config){
+		"consume empty log fails":                             testConsumeEmpty,
+		"produce/consume a message to/from the log succeeeds": testProduceConsume,
+		"consume past log boundary fails":                     testConsumePastBoundary,
+		"produce/consume stream succeeds":                     testProduceConsumeStream,
+	} {
+		t.Run(scenario, func(t *testing.T) {
+			client, config, teardown := testSetup(t, nil)
+			defer teardown()
+			fn(t, client, config)
+		})
 	}
-	srv, err := NewAPI(config)
-	require.NoError(t, err)
+}
 
-	go func() {
-		srv.Serve(l)
-	}()
+func testConsumeEmpty(t *testing.T, client api.LogClient, config *Config) {
+	consume, err := client.Consume(context.Background(), &api.ConsumeRequest{
+		Offset: 0,
+	})
+	req.Nil(t, consume)
+	req.Equal(t, grpc.Code(err), grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err()))
+}
 
-	defer func() {
-		srv.Stop()
-		l.Close()
-	}()
+func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
+	ctx := context.Background()
 
 	want := &api.RecordBatch{
 		Records: []*api.Record{{
@@ -42,32 +44,123 @@ func TestServer(t *testing.T) {
 		}},
 	}
 
-	ctx := context.Background()
-	produce, err := c.Produce(ctx, &api.ProduceRequest{
+	produce, err := client.Produce(context.Background(), &api.ProduceRequest{
 		RecordBatch: want,
 	})
-	require.NoError(t, err)
+	req.NoError(t, err)
 
-	consume, err := c.Consume(ctx, &api.ConsumeRequest{
+	consume, err := client.Consume(ctx, &api.ConsumeRequest{
 		Offset: produce.FirstOffset,
 	})
-	require.NoError(t, err)
+	req.NoError(t, err)
+	req.Equal(t, want, consume.RecordBatch)
+}
 
-	got := consume.RecordBatch
+func testConsumePastBoundary(t *testing.T, client api.LogClient, config *Config) {
+	ctx := context.Background()
 
-	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("API.Produce/Consume, got: %v, want %v", got, want)
+	produce, err := client.Produce(ctx, &api.ProduceRequest{
+		RecordBatch: &api.RecordBatch{
+			Records: []*api.Record{{
+				Value: []byte("hello world"),
+			}},
+		},
+	})
+	req.NoError(t, err)
+
+	consume, err := client.Consume(ctx, &api.ConsumeRequest{
+		Offset: produce.FirstOffset + 1,
+	})
+	if consume != nil {
+		t.Fatal("consume not nil")
+	}
+	got, want := grpc.Code(err), grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	if got != want {
+		t.Fatalf("got err: %v, want: %v", got, want)
 	}
 }
 
-type mocklog map[uint64]*api.RecordBatch
+func testProduceConsumeStream(t *testing.T, client api.LogClient, config *Config) {
+	ctx := context.Background()
 
-func (m mocklog) AppendBatch(b *api.RecordBatch) (uint64, error) {
-	off := uint64(len(m))
-	m[off] = b
-	return off, nil
+	batches := []*api.RecordBatch{{
+		Records: []*api.Record{{
+			Value: []byte("first message"),
+		}},
+	}, {
+		Records: []*api.Record{{
+			Value: []byte("second message"),
+		}},
+	}}
+
+	{
+		stream, err := client.ProduceStream(ctx)
+		req.NoError(t, err)
+
+		for offset, batch := range batches {
+			err = stream.Send(&api.ProduceRequest{
+				RecordBatch: batch,
+			})
+			req.NoError(t, err)
+			res, err := stream.Recv()
+			req.NoError(t, err)
+			if res.FirstOffset != uint64(offset) {
+				t.Fatalf("got offset: %d, want: %d", res.FirstOffset, offset)
+			}
+		}
+
+	}
+
+	{
+		stream, err := client.ConsumeStream(ctx, &api.ConsumeRequest{Offset: 0})
+		req.NoError(t, err)
+
+		for _, batch := range batches {
+			res, err := stream.Recv()
+			req.NoError(t, err)
+			req.Equal(t, res.RecordBatch, batch)
+		}
+	}
 }
 
-func (m mocklog) ReadBatch(off uint64) (*api.RecordBatch, error) {
-	return m[off], nil
+func testSetup(t *testing.T, fn func(*Config)) (
+	client api.LogClient,
+	config *Config,
+	teardown func(),
+) {
+	t.Helper()
+
+	l, err := net.Listen("tcp", ":0")
+	req.NoError(t, err)
+
+	clientOptions := []grpc.DialOption{grpc.WithInsecure()}
+	cc, err := grpc.Dial(l.Addr().String(), clientOptions...)
+	req.NoError(t, err)
+
+	dir, err := ioutil.TempDir("", "server-test")
+	req.NoError(t, err)
+
+	clog, err := log.NewCommitLog(dir, log.Config{})
+	req.NoError(t, err)
+
+	config = &Config{
+		CommitLog: clog,
+	}
+	if fn != nil {
+		fn(config)
+	}
+	server, err := NewAPI(config)
+	req.NoError(t, err)
+
+	go func() {
+		server.Serve(l)
+	}()
+
+	client = api.NewLogClient(cc)
+
+	return client, config, func() {
+		server.Stop()
+		cc.Close()
+		l.Close()
+	}
 }

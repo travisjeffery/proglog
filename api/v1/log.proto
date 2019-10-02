@@ -2,6 +2,12 @@ syntax = "proto3";
 
 package log.v1;
 
+import "gogoproto/gogo.proto";
+
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
 service Log {
   rpc Produce(ProduceRequest) returns (ProduceResponse) {}
   rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}

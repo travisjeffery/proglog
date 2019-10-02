@@ -1,97 +1,100 @@
+// START: begin
 package log
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
+	"io"
 	"os"
-	"path/filepath"
-	"sync"
 
 	"github.com/tysontate/gommap"
 )
 
 var (
-	encoding = binary.BigEndian
-)
-
-const (
-	offsetWidth   = 8
-	positionWidth = 8
-	lengthWidth   = 8
-	entryWidth    = offsetWidth + positionWidth + lengthWidth
-	maxEntries    = 1000
+	offWidth uint64 = 4
+	posWidth uint64 = 8
+	entWidth        = offWidth + posWidth
 )
 
 type index struct {
-	mu          sync.Mutex
-	mmap        gommap.MMap
-	position    uint64
-	file        *os.File
-	dir         string
-	firstOffset uint64
+	file *os.File
+	mmap gommap.MMap
+	size uint64
 }
 
-type entry struct {
-	Offset   uint64
-	Position uint64
-	Length   uint64
-}
+// END: begin
 
-func (i *index) readEntry(offset uint64) (e entry, err error) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-	i.init()
-	p := make([]byte, entryWidth)
-	pos := offset * entryWidth
-	copy(p, i.mmap[pos:pos+entryWidth])
-	b := bytes.NewReader(p)
-	err = binary.Read(b, encoding, &e)
-	return e, err
-}
-
-func (i *index) writeEntry(e entry) error {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-	i.init()
-	b := new(bytes.Buffer)
-	if err := binary.Write(b, encoding, e); err != nil {
-		return err
+// START: newindex
+func newIndex(f *os.File, c Config) (*index, error) {
+	idx := &index{
+		file: f,
 	}
-	n, err := i.WriteAt(b.Bytes(), int64(i.position))
+	fi, err := os.Stat(f.Name())
 	if err != nil {
+		return nil, err
+	}
+	idx.size = uint64(fi.Size())
+	if err = os.Truncate(
+		f.Name(), int64(c.Segment.MaxIndexBytes),
+	); err != nil {
+		return nil, err
+	}
+	if idx.mmap, err = gommap.Map(
+		idx.file.Fd(),
+		gommap.PROT_READ|gommap.PROT_WRITE,
+		gommap.MAP_SHARED,
+	); err != nil {
+		return nil, err
+	}
+	return idx, nil
+}
+
+// END: newindex
+
+// START: close
+func (i *index) Close() error {
+	if err := i.mmap.Sync(gommap.MS_SYNC); err != nil {
 		return err
 	}
-	i.position += uint64(n)
-	return nil
-
-}
-
-func (i *index) WriteAt(p []byte, offset int64) (int, error) {
-	i.init()
-	n := copy(i.mmap[offset:offset+entryWidth], p)
-	return n, nil
-}
-
-func (i *index) init() {
-	if i.file == nil {
-		var err error
-		if i.file, err = os.Create(i.path()); err != nil {
-			panic(err)
-		}
-		if err = i.file.Truncate(entryWidth * maxEntries); err != nil {
-			panic(err)
-		}
-		if i.mmap, err = gommap.Map(
-			i.file.Fd(),
-			gommap.PROT_READ|gommap.PROT_WRITE,
-			gommap.MAP_SHARED,
-		); err != nil {
-			panic(err)
-		}
+	if err := i.file.Sync(); err != nil {
+		return err
 	}
+	if err := i.file.Truncate(int64(i.size)); err != nil {
+		return err
+	}
+	return i.file.Close()
 }
 
-func (i *index) path() string {
-	return filepath.Join(i.dir, fmt.Sprintf("%d.index", i.firstOffset))
+// END: close
+
+// START: read
+func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
+	if i.size == 0 {
+		return 0, 0, io.EOF
+	}
+	if in == -1 {
+		out = uint32((i.size / entWidth) - 1)
+	} else {
+		out = uint32(in)
+	}
+	pos = uint64(out) * entWidth
+	if i.size < pos+entWidth {
+		return 0, 0, io.EOF
+	}
+	out = enc.Uint32(i.mmap[pos : pos+offWidth])
+	pos = enc.Uint64(i.mmap[pos+offWidth : pos+entWidth])
+	return out, pos, nil
 }
+
+// END: read
+
+// START: write
+func (i *index) Write(off uint32, pos uint64) error {
+	if uint64(len(i.mmap)) < i.size+entWidth {
+		return io.EOF
+	}
+	enc.PutUint32(i.mmap[i.size:i.size+offWidth], off)
+	enc.PutUint64(i.mmap[i.size+offWidth:i.size+entWidth], pos)
+	i.size += uint64(entWidth)
+	return nil
+}
+
+// END: write

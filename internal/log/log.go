@@ -1,38 +1,143 @@
+// START: begin
 package log
 
 import (
-	"os"
+	"io/ioutil"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/gogo/protobuf/proto"
+	api "github.com/travisjeffery/proglog/api/v1"
 )
 
-type log struct {
-	*os.File
-	size uint64
+type Log struct {
+	sync.RWMutex
+
+	Dir    string
+	Config Config
+
+	activeSegment *segment
+	segments      []*segment
 }
 
-func newLog(f *os.File) (*log, error) {
-	fi, err := os.Stat(f.Name())
+// END: begin
+
+// START: newlogbegin
+func NewLog(dir string, c Config) (*Log, error) {
+	if c.Segment.MaxStoreBytes == 0 {
+		c.Segment.MaxStoreBytes = 1024
+	}
+	if c.Segment.MaxIndexBytes == 0 {
+		c.Segment.MaxIndexBytes = 1024
+	}
+	l := &Log{
+		Dir:    dir,
+		Config: c,
+	}
+	// END: newlogbegin
+
+	// START: newlogend
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	size := uint64(fi.Size())
-	return &log{
-		File: f,
-		size: size,
-	}, nil
-}
-
-// Append the bytes to the end of the log file and returns the position the bytes were written and
-// the number of bytes written.
-func (l *log) Append(p []byte) (uint64, uint64, error) {
-	pos := l.size
-	n, err := l.WriteAt(p, int64(pos))
-	if err != nil {
-		return 0, 0, err
+	var baseOffsets []uint64
+	for _, file := range files {
+		offStr := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
+		off, _ := strconv.ParseUint(offStr, 10, 0)
+		baseOffsets = append(baseOffsets, off)
 	}
-	l.size += uint64(n)
-	return uint64(n), pos, nil
+	sort.Slice(baseOffsets, func(i, j int) bool {
+		return baseOffsets[i] < baseOffsets[j]
+	})
+	for i := 0; i < len(baseOffsets); i++ {
+		if err = l.newSegment(baseOffsets[i]); err != nil {
+			return nil, err
+		}
+		// baseOffset contains dup for index and store so we skip the dup
+		i++
+	}
+	if l.segments == nil {
+		if err = l.newSegment(0); err != nil {
+			return nil, err
+		}
+	}
+	return l, nil
 }
 
-func (l *log) Size() uint64 {
-	return l.size
+// END: newlogend
+
+// START: append
+func (l *Log) Append(record *api.RecordBatch) (uint64, error) {
+	p, err := proto.Marshal(record)
+	if err != nil {
+		return 0, err
+	}
+	l.Lock()
+	defer l.Unlock()
+	off, err := l.activeSegment.Append(p)
+	if err != nil {
+		return 0, err
+	}
+	if l.activeSegment.IsMaxed() {
+		err = l.newSegment(off + 1)
+	}
+	return off, err
 }
+
+// END: append
+
+// START: read
+func (l *Log) Read(off uint64) (*api.RecordBatch, error) {
+	l.RLock()
+	defer l.RUnlock()
+	var s *segment
+	for _, segment := range l.segments {
+		if segment.baseOffset <= off {
+			s = segment
+			break
+		}
+	}
+	if s == nil || s.nextOffset <= off {
+		return nil, api.ErrOffsetOutOfRange{Offset: off}
+	}
+	p, err := s.Read(off)
+	if err != nil {
+		return nil, err
+	}
+	record := &api.RecordBatch{}
+	err = proto.Unmarshal(p, record)
+	return record, err
+}
+
+// END: read
+
+// START: newsegment
+func (l *Log) newSegment(off uint64) error {
+	s, err := newSegment(l.Dir, off, l.Config)
+	if err != nil {
+		return err
+	}
+	l.segments = append(l.segments, s)
+	l.activeSegment = s
+	return nil
+}
+
+// END: newsegment
+
+// START: close
+func (l *Log) Close() error {
+	l.Lock()
+	defer l.Unlock()
+	for _, s := range l.segments {
+		if err := s.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// END: close

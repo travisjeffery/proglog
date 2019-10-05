@@ -28,8 +28,8 @@ func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 // END: types
 
 // START: newapi
-func NewAPI(config *Config) (*grpc.Server, error) {
-	gsrv := grpc.NewServer()
+func NewAPI(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
+	gsrv := grpc.NewServer(opts...)
 	srv, err := newgrpcServer(config)
 	if err != nil {
 		return nil, err

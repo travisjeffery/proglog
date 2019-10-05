@@ -1,8 +1,10 @@
 CONFIG_PATH=${HOME}/.proglog/
 
+.PHONY: init
 init:
 	mkdir -p ${CONFIG_PATH}
 
+.PHONY: gencert
 gencert:
 	cfssl gencert \
 		-initca configs/certs/ca-csr.json | cfssljson -bare ca
@@ -19,14 +21,25 @@ gencert:
 		-ca-key=ca-key.pem \
 		-config=configs/certs/ca-config.json \
 		-profile=client \
-		configs/certs/client-csr.json | cfssljson -bare client
+		-cn="root" \
+		configs/certs/client-csr.json | cfssljson -bare root-client
+
+	cfssl gencert \
+		-ca=ca.pem \
+		-ca-key=ca-key.pem \
+		-config=configs/certs/ca-config.json \
+		-profile=client \
+		-cn="nobody" \
+		configs/certs/client-csr.json | cfssljson -bare nobody-client
 
 	mv *.pem *.csr ${CONFIG_PATH}
 
+.PHONY: test
 test:
 	go test -race ./...
 
 
+.PHONY: compile
 compile:
 	protoc api/v1/*.proto \
 		--gogo_out=Mgogoproto/gogo.proto=github.com/gogo/protobuf/proto,plugins=grpc:. \

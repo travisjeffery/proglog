@@ -32,7 +32,7 @@ func TestSegment(t *testing.T) {
 
 		e, err := s.FindIndex(off - 1)
 		req.NoError(t, err)
-		req.Equal(t, i-1, e.Off)
+		req.Equal(t, i-1, uint64(e.Off))
 		req.Equal(t, e.Pos, size-l)
 		req.Equal(t, e.Len, l)
 

@@ -29,6 +29,7 @@ test:
 
 compile:
 	protoc api/v1/*.proto \
+		-I ${GOPATH}/src/ \
 		--gogo_out=\
 Mgogoproto/gogo.proto=github.com/gogo/protobuf/proto,plugins=grpc:. \
 		--proto_path=\

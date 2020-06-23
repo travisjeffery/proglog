@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="bf43d935-b241-4da0-843a-3a0a7da68693" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" path="$USER_HOME$/.goenv/versions/1.13.6" />
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1YeuUuZ9F0AGa8uWi87hJP8yvCt" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../code/SecureYourServices/internal" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/../../../code/SecureYourServices/internal" />
+      <recent name="$PROJECT_DIR$/../../../code/SecureYourServices" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go Test.go test log">
+    <configuration name="go test log" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="SecureYourServices" />
+      <working_directory value="$PROJECT_DIR$/../../../code/SecureYourServices/internal/log" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/../../../code/SecureYourServices/internal/log" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test server" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="SecureYourServices" />
+      <working_directory value="$PROJECT_DIR$/../../../code/SecureYourServices/internal/server" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/../../../code/SecureYourServices/internal/server" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.go test log" />
+        <item itemvalue="Go Test.go test server" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="Makefile" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+    <proxy>direct</proxy>
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="1036" height="555" key="GridCell.Tab.0.bottom" timestamp="1583803249264">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.bottom/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803249264" />
+    <state width="1036" height="565" key="GridCell.Tab.0.bottom/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583614268663" />
+    <state width="1036" height="555" key="GridCell.Tab.0.center" timestamp="1583803249264">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.center/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803249264" />
+    <state width="1036" height="565" key="GridCell.Tab.0.center/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583614268663" />
+    <state width="1036" height="555" key="GridCell.Tab.0.left" timestamp="1583803249264">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.left/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803249264" />
+    <state width="1036" height="565" key="GridCell.Tab.0.left/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583614268663" />
+    <state width="1036" height="555" key="GridCell.Tab.0.right" timestamp="1583803249264">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.right/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803249264" />
+    <state width="1036" height="565" key="GridCell.Tab.0.right/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583614268663" />
+    <state x="1297" y="687" width="790" height="544" key="find.popup" timestamp="1583611570279">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1297" y="687" width="790" height="544" key="find.popup/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583611570279" />
+  </component>
+</project>

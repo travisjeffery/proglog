@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="516b3ed4-e44e-4242-992f-8aef163bcdcb" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" path="$USER_HOME$/.goenv/versions/1.13.4" />
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1TxlMIMejqjzmWxVmpVT4mbMwRO" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="NewWatcherDialog.advanced.open" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="configurable.Global.GOPATH.is.expanded" value="true" />
+    <property name="configurable.Module.GOPATH.is.expanded" value="false" />
+    <property name="configurable.Project.GOPATH.is.expanded" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="settings.editor.selected.configurable" value="go.vgo" />
+  </component>
+  <component name="ReadonlyStatusHandler">
+    <option name="SHOW_DIALOG" value="false" />
+  </component>
+  <component name="RunManager" selected="Go Test.go test agent">
+    <configuration name="go test ." type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+      <module name="CoordinateWithConsensus" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test agent" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="CoordinateWithConsensus" />
+      <working_directory value="$PROJECT_DIR$/internal/agent" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/agent" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test github.com/travisjeffery/proglog/internal/loadbalance" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="CoordinateWithConsensus" />
+      <working_directory value="$PROJECT_DIR$/../internal/loadbalance" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/travisjeffery/proglog/internal/loadbalance" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test loadbalance" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="CoordinateWithConsensus" />
+      <working_directory value="$PROJECT_DIR$/internal/loadbalance" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/loadbalance" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test log" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="CoordinateWithConsensus" />
+      <working_directory value="$PROJECT_DIR$/internal/log" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/log" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.go test agent" />
+        <item itemvalue="Go Test.go test log" />
+        <item itemvalue="Go Test.go test loadbalance" />
+        <item itemvalue="Go Test.go test github.com/travisjeffery/proglog/internal/loadbalance" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+    <proxy>direct</proxy>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="1082" y="625" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1579404323792">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1082" y="625" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1579404323792" />
+    <state width="1036" height="574" key="GridCell.Tab.0.bottom" timestamp="1583803245898">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="574" key="GridCell.Tab.0.bottom/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803245898" />
+    <state width="1036" height="574" key="GridCell.Tab.0.center" timestamp="1583803245898">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="574" key="GridCell.Tab.0.center/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803245898" />
+    <state width="1036" height="574" key="GridCell.Tab.0.left" timestamp="1583803245898">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="574" key="GridCell.Tab.0.left/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803245898" />
+    <state width="1036" height="574" key="GridCell.Tab.0.right" timestamp="1583803245898">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="574" key="GridCell.Tab.0.right/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803245898" />
+    <state x="86" y="75" width="1749" height="749" key="SettingsEditor" timestamp="1580880996843">
+      <screen x="0" y="0" width="1920" height="1080" />
+    </state>
+    <state x="1127" y="602" width="986" height="725" key="SettingsEditor/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1579404347601" />
+    <state x="86" y="75" width="1749" height="749" key="SettingsEditor/0.0.1920.1080@0.0.1920.1080" timestamp="1580880996843" />
+    <state x="1297" y="687" width="646" height="544" key="find.popup" timestamp="1583721163845">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1297" y="687" width="646" height="544" key="find.popup/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583721163845" />
+    <state x="1368" y="586" width="500" height="759" key="refactoring.ChangeSignatureDialog" timestamp="1577945055000">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1368" y="586" width="500" height="759" key="refactoring.ChangeSignatureDialog/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1577945055000" />
+    <state x="1430" y="409" width="672" height="678" key="search.everywhere.popup" timestamp="1583716766347">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1430" y="409" width="672" height="678" key="search.everywhere.popup/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583716766347" />
+    <state x="623" y="230" key="search.everywhere.popup/0.0.1920.1080@0.0.1920.1080" timestamp="1580880448010" />
+    <state x="1348" y="881" width="540" height="169" key="vcs.readOnlyHandler.ReadOnlyStatusDialog" timestamp="1577966274905">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1348" y="881" width="540" height="169" key="vcs.readOnlyHandler.ReadOnlyStatusDialog/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1577966274905" />
+  </component>
+</project>

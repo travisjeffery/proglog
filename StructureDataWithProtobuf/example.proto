@@ -1,0 +1,27 @@
+// START:twitter
+syntax = "proto3";
+
+package twitter;
+
+message Tweet {
+  string message = 1;
+}
+// END:twitter
+
+// START:setter
+syntax = "proto3";
+
+import "setter.proto";
+
+message Person {
+  option (setter.all) = true;
+
+  string id = 1;
+  string name = 2;
+}
+
+message Animal {
+  string id = 1;
+  string name = 2 [(setter.one)=true];
+}
+// END:setter

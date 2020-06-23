@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package log.v1;
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+// START: log
+service Log {
+  rpc Produce(ProduceRequest) returns (ProduceResponse) {}
+  rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}
+  rpc ConsumeStream(ConsumeRequest) returns (stream ConsumeResponse) {}
+  rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse)
+    {}
+  rpc GetServers(GetServersRequest) returns (GetServersResponse) {}
+}
+// END: log
+
+message ProduceRequest  {
+  Record record = 1;
+}
+
+message ProduceResponse  {
+  uint64 offset = 1;
+}
+
+message ConsumeRequest {
+  uint64 offset = 1;
+}
+
+message ConsumeResponse {
+  Record record = 2;
+}
+
+message Record {
+  bytes value = 1;
+  uint64 offset = 2;
+  uint64 term = 3;
+  uint32 type = 4;
+}
+
+// START: get_servers
+message GetServersRequest {}
+
+message GetServersResponse {
+  repeated Server servers = 1;
+}
+
+message Server {
+  string id = 1;
+  string rpc_addr = 2;
+  bool is_leader = 3;
+}
+// END: get_servers

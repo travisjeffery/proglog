@@ -1,0 +1,11 @@
+message Person {
+  option (setter.all) = "json";
+
+  string id = 1;
+  string name = 2;
+}
+
+message Animal {
+  string id = 1;
+  string name = 2 [(setter.one)=true];
+}

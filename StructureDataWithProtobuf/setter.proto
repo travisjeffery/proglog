@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package setter;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+    bool all = 90090;
+}
+
+extend google.protobuf.FieldOptions {
+    bool one = 90091;
+}

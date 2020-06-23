@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="07e329cb-0825-4d39-8acb-62c3b99c62e2" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" path="$USER_HOME$/.goenv/versions/1.13.6" />
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1YspTA2qXruYQYCYj9I3HfupKGa" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$USER_HOME$" />
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="WriteALogPackage" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i -race" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test WriteALogPackage" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+      <module name="WriteALogPackage" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i -race" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+    <proxy>direct</proxy>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="2" y="610" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583741202324">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state x="2" y="610" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583741202324" />
+    <state width="1036" height="555" key="GridCell.Tab.0.bottom" timestamp="1583803242780">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.bottom/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803242780" />
+    <state width="1036" height="555" key="GridCell.Tab.0.center" timestamp="1583803242780">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.center/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803242780" />
+    <state width="1036" height="555" key="GridCell.Tab.0.left" timestamp="1583803242780">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.left/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803242780" />
+    <state width="1036" height="555" key="GridCell.Tab.0.right" timestamp="1583803242780">
+      <screen x="0" y="0" width="1080" height="1890" />
+    </state>
+    <state width="1036" height="555" key="GridCell.Tab.0.right/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1583803242780" />
+  </component>
+</project>

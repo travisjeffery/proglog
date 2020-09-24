@@ -90,7 +90,7 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 	}
 
 	produce, err := client.Produce(
-		context.Background(),
+		ctx,
 		&api.ProduceRequest{
 			Record: want,
 		},

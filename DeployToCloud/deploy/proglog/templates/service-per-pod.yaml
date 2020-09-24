@@ -1,0 +1,76 @@
+# START: decorator_controller
+{{ if .Values.service.lb }}
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: DecoratorController
+metadata:
+  name: service-per-pod
+spec:
+  resources:
+  - apiVersion: apps/v1
+    resource: statefulsets
+    annotationSelector:
+      matchExpressions:
+      - {key: service-per-pod-label, operator: Exists}
+      - {key: service-per-pod-ports, operator: Exists}
+  attachments:
+  - apiVersion: v1
+    resource: services
+  hooks:
+    sync:
+      webhook:
+        url: "http://service-per-pod.metacontroller/create-service-per-pod"
+    finalize:
+      webhook:
+        url: "http://service-per-pod.metacontroller/delete-service-per-pod"
+# END: decorator_controller
+# START: webhook
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metacontroller
+  name: service-per-pod-hooks
+data:
+{{ (.Files.Glob "hooks/*").AsConfig | indent 2 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-per-pod
+  namespace: metacontroller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-per-pod
+  template:
+    metadata:
+      labels:
+        app: service-per-pod
+    spec:
+      containers:
+      - name: hooks
+        image: metacontroller/jsonnetd:0.1
+        imagePullPolicy: Always
+        workingDir: /hooks
+        volumeMounts:
+        - name: hooks
+          mountPath: /hooks
+      volumes:
+      - name: hooks
+        configMap:
+          name: service-per-pod-hooks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-per-pod
+  namespace: metacontroller
+spec:
+  selector:
+    app: service-per-pod
+  ports:
+  - port: 80
+    targetPort: 8080
+{{ end }}
+# END: webhook

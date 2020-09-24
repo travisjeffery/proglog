@@ -24,7 +24,8 @@ type Log struct {
 
 // END: begin
 
-// START: newlogbegin
+
+// START: newlog
 func NewLog(dir string, c Config) (*Log, error) {
 	if c.Segment.MaxStoreBytes == 0 {
 		c.Segment.MaxStoreBytes = 1024
@@ -36,16 +37,23 @@ func NewLog(dir string, c Config) (*Log, error) {
 		Dir:    dir,
 		Config: c,
 	}
-	// END: newlogbegin
 
-	// START: newlogend
-	files, err := ioutil.ReadDir(dir)
+	return l, l.setup()
+}
+// END: newlog
+
+// START: setup
+func (l *Log) setup() error {
+	files, err := ioutil.ReadDir(l.Dir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var baseOffsets []uint64
 	for _, file := range files {
-		offStr := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
+		offStr := strings.TrimSuffix(
+			file.Name(),
+			path.Ext(file.Name()),
+		)
 		off, _ := strconv.ParseUint(offStr, 10, 0)
 		baseOffsets = append(baseOffsets, off)
 	}
@@ -54,20 +62,20 @@ func NewLog(dir string, c Config) (*Log, error) {
 	})
 	for i := 0; i < len(baseOffsets); i++ {
 		if err = l.newSegment(baseOffsets[i]); err != nil {
-			return nil, err
+			return err
 		}
-		// baseOffset contains dup for index and store so we skip the dup
+		// baseOffset contains dup for index and store so we skip
+		// the dup
 		i++
 	}
 	if l.segments == nil {
-		if err = l.newSegment(c.Segment.InitialOffset); err != nil {
-			return nil, err
+		if err = l.newSegment(l.Config.Segment.InitialOffset); err != nil {
+			return err
 		}
 	}
-	return l, nil
+	return nil
 }
-
-// END: newlogend
+// END: setup
 
 // START: append
 func (l *Log) Append(record *api.Record) (uint64, error) {

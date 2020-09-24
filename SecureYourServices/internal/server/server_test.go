@@ -159,7 +159,7 @@ func testProduceConsume(t *testing.T, client, _ api.LogClient, config *Config) {
 	}
 
 	produce, err := client.Produce(
-		context.Background(),
+		ctx,
 		&api.ProduceRequest{
 			Record: want,
 		},
@@ -268,7 +268,7 @@ func testUnauthorized(
 	config *Config,
 ) {
 	ctx := context.Background()
-	produce, err := client.Produce(context.Background(),
+	produce, err := client.Produce(ctx,
 		&api.ProduceRequest{
 			Record: &api.Record{
 				Value: []byte("hello world"),

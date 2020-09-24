@@ -1,12 +1,25 @@
 // START: types
 package server
 
+// START: imports
 import (
 	"context"
+	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	api "github.com/travisjeffery/proglog/api/v1"
+
+	// START_HIGHLIGHT
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	// END_HIGHLIGHT
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -14,9 +27,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// END: imports
+
 var _ api.LogServer = (*grpcServer)(nil)
 
-// START: config_authorizer
+
 type Config struct {
 	CommitLog  CommitLog
 	Authorizer Authorizer
@@ -41,19 +56,54 @@ func newgrpcServer(config *Config) (*grpcServer, error) {
 	return srv, nil
 }
 
-// START: newgrpcserver
-func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (
+// START: logger
+func NewGRPCServer(config *Config, grpcOpts ...grpc.ServerOption) (
 	*grpc.Server,
 	error,
 ) {
-	opts = append(opts, grpc.StreamInterceptor(
-		grpc_middleware.ChainStreamServer(
-			grpc_auth.StreamServerInterceptor(authenticate),
-		)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-		grpc_auth.UnaryServerInterceptor(authenticate),
-	)))
-	// END: newgrpcserver_before_auth
-	gsrv := grpc.NewServer(opts...)
+	logger := zap.L().Named("server")
+	zapOpts := []grpc_zap.Option{
+		grpc_zap.WithDurationField(
+			func(duration time.Duration) zapcore.Field {
+				return zap.Int64(
+					"grpc.time_ns",
+					duration.Nanoseconds(),
+				)
+			},
+		),
+	}
+	// END: logger
+
+	// START: metrics_traces
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	err := view.Register(ocgrpc.DefaultServerViews...)
+	if err != nil {
+		return nil, err
+	}
+	// END: metrics_traces
+
+	// START: grpc_opts
+	grpcOpts = append(grpcOpts,
+		grpc.StreamInterceptor(
+			grpc_middleware.ChainStreamServer(
+				// START_HIGHLIGHT
+				grpc_ctxtags.StreamServerInterceptor(),
+				grpc_zap.StreamServerInterceptor(logger, zapOpts...),
+				// END_HIGHLIGHT
+				grpc_auth.StreamServerInterceptor(authenticate),
+			)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			// START_HIGHLIGHT
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_zap.UnaryServerInterceptor(logger, zapOpts...),
+			// END_HIGHLIGHT
+			grpc_auth.UnaryServerInterceptor(authenticate),
+		)),
+		// START_HIGHLIGHT
+		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
+		// END_HIGHLIGHT
+	)
+	// END: grpc_opts
+	gsrv := grpc.NewServer(grpcOpts...)
 	srv, err := newgrpcServer(config)
 	if err != nil {
 		return nil, err
@@ -62,12 +112,11 @@ func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (
 	return gsrv, nil
 }
 
-// END: newgrpcserver
-
 // START: request_response
+// START: produce_authorize
 func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
 	*api.ProduceResponse, error) {
-	// START: produce_authorize
+	// START_HIGHLIGHT
 	if err := s.Authorizer.Authorize(
 		subject(ctx),
 		objectWildcard,
@@ -75,8 +124,7 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
 	); err != nil {
 		return nil, err
 	}
-	// END: produce_authorize
-
+	// END_HIGHLIGHT
 	offset, err := s.CommitLog.Append(req.Record)
 	if err != nil {
 		return nil, err
@@ -84,9 +132,12 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
 	return &api.ProduceResponse{Offset: offset}, nil
 }
 
+// END: produce_authorize
+
+// START: consume_authorize
 func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
 	*api.ConsumeResponse, error) {
-	// START: consume_authorize
+	// START_HIGHLIGHT
 	if err := s.Authorizer.Authorize(
 		subject(ctx),
 		objectWildcard,
@@ -94,8 +145,7 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
 	); err != nil {
 		return nil, err
 	}
-	// END: consume_authorize
-
+	// END_HIGHLIGHT
 	record, err := s.CommitLog.Read(req.Offset)
 	if err != nil {
 		return nil, err
@@ -103,6 +153,7 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
 	return &api.ConsumeResponse{Record: record}, nil
 }
 
+// END: consume_authorize
 // END: request_response
 
 // START: stream
@@ -146,6 +197,7 @@ func (s *grpcServer) ConsumeStream(
 		}
 	}
 }
+
 // END: stream
 
 // START: commitlog

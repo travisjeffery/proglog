@@ -1,0 +1,6 @@
+dependencies:
+- name: metacontroller
+  repository: file://../metacontroller
+  version: 0.1.0
+digest: sha256:93c0d583146a4130e31765c1afa9cf3c8982b5b3b36de4608081d1b8b0533dce
+generated: "2020-06-29T08:43:38.139335033-05:00"

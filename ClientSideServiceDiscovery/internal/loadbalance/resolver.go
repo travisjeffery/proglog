@@ -4,9 +4,9 @@ package loadbalance
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
@@ -16,10 +16,11 @@ import (
 )
 
 type Resolver struct {
-	mu           sync.Mutex
-	clientConn   resolver.ClientConn
-	resolverConn *grpc.ClientConn
+	mu            sync.Mutex
+	clientConn    resolver.ClientConn
+	resolverConn  *grpc.ClientConn
 	serviceConfig *serviceconfig.ParseResult
+	logger        *zap.Logger
 }
 
 // END: resolver_type
@@ -31,6 +32,7 @@ func (r *Resolver) Build(
 	cc resolver.ClientConn,
 	opts resolver.BuildOptions,
 ) (resolver.Resolver, error) {
+	r.logger = zap.L().Named("resolver")
 	r.clientConn = cc
 	var dialOpts []grpc.DialOption
 	if opts.DialCreds != nil {
@@ -74,9 +76,9 @@ func (r *Resolver) ResolveNow(resolver.ResolveNowOptions) {
 	ctx := context.Background()
 	res, err := client.GetServers(ctx, &api.GetServersRequest{})
 	if err != nil {
-		log.Printf(
-			"[ERROR] proglog: failed to resolve servers: %v",
-			err,
+		r.logger.Error(
+			"failed to resolve server",
+			zap.Error(err),
 		)
 		return
 	}
@@ -91,14 +93,17 @@ func (r *Resolver) ResolveNow(resolver.ResolveNowOptions) {
 		})
 	}
 	r.clientConn.UpdateState(resolver.State{
-		Addresses: addrs,
+		Addresses:     addrs,
 		ServiceConfig: r.serviceConfig,
 	})
 }
 
 func (r *Resolver) Close() {
 	if err := r.resolverConn.Close(); err != nil {
-		log.Printf("[ERROR] proglog: failed to close conn: %v", err)
+		r.logger.Error(
+			"failed to close conn",
+			zap.Error(err),
+		)
 	}
 }
 

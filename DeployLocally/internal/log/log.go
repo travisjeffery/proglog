@@ -26,6 +26,7 @@ type Log struct {
 
 // END: begin
 
+
 // START: newlog
 func NewLog(dir string, c Config) (*Log, error) {
 	if c.Segment.MaxStoreBytes == 0 {
@@ -105,11 +106,11 @@ func (l *Log) Read(off uint64) (*api.Record, error) {
 			break
 		}
 	}
-	// START: before
+	// START: after
 	if s == nil || s.nextOffset <= off {
 		return nil, api.ErrOffsetOutOfRange{Offset: off}
 	}
-	// END: before
+	// END: after
 	return s.Read(off)
 }
 

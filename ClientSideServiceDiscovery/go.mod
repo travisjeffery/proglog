@@ -3,7 +3,7 @@ module github.com/travisjeffery/proglog
 require (
 	github.com/casbin/casbin v1.9.1
 	github.com/davecgh/go-spew v1.1.1
-	github.com/gogo/protobuf v1.3.1
+	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/mux v1.7.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
 	github.com/hashicorp/raft v1.1.1
@@ -16,11 +16,12 @@ require (
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
-	golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e // indirect
-	golang.org/x/text v0.3.2 // indirect
-	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
-	google.golang.org/grpc v1.26.0
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
+	google.golang.org/grpc v1.32.0
+	google.golang.org/protobuf v1.25.0
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
+
+replace github.com/hashicorp/raft-boltdb => github.com/travisjeffery/raft-boltdb v0.0.0-20201002143322-bc94ee46437b
 
 go 1.13

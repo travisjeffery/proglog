@@ -33,6 +33,7 @@ func TestServer(t *testing.T) {
 		})
 	}
 }
+
 // END: intro
 
 // START: setup
@@ -78,6 +79,7 @@ func setupTest(t *testing.T, fn func(*Config)) (
 		clog.Remove()
 	}
 }
+
 // END: setup
 
 // START: produceconsume
@@ -86,7 +88,6 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 
 	want := &api.Record{
 		Value: []byte("hello world"),
-
 	}
 
 	produce, err := client.Produce(
@@ -101,8 +102,10 @@ func testProduceConsume(t *testing.T, client api.LogClient, config *Config) {
 		Offset: produce.Offset,
 	})
 	require.NoError(t, err)
-	require.Equal(t, want, consume.Record)
+	require.Equal(t, want.Value, consume.Record.Value)
+	require.Equal(t, want.Offset, consume.Record.Offset)
 }
+
 // END: produceconsume
 
 // START: consumeerror
@@ -132,6 +135,7 @@ func testConsumePastBoundary(
 		t.Fatalf("got err: %v, want: %v", got, want)
 	}
 }
+
 // END: consumeerror
 
 // START: stream
@@ -143,10 +147,10 @@ func testProduceConsumeStream(
 	ctx := context.Background()
 
 	records := []*api.Record{{
-		Value: []byte("first message"),
+		Value:  []byte("first message"),
 		Offset: 0,
 	}, {
-		Value: []byte("second message"),
+		Value:  []byte("second message"),
 		Offset: 1,
 	}}
 
@@ -179,11 +183,15 @@ func testProduceConsumeStream(
 		)
 		require.NoError(t, err)
 
-		for _, record := range records {
+		for i, record := range records {
 			res, err := stream.Recv()
 			require.NoError(t, err)
-			require.Equal(t, res.Record, record)
+			require.Equal(t, res.Record, &api.Record{
+				Value:  record.Value,
+				Offset: uint64(i),
+			})
 		}
 	}
 }
+
 // END: stream

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/gogo/protobuf/proto"
 	api "github.com/travisjeffery/proglog/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 type segment struct {
@@ -134,6 +134,7 @@ func (s *segment) Remove() error {
 	}
 	return nil
 }
+
 // END: remove
 
 // START: nearestmultiple

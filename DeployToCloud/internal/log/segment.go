@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	api "github.com/travisjeffery/proglog/api/v1"
 )
 

@@ -3,9 +3,9 @@ package log
 
 import (
 	"context"
-	"log"
 	"sync"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	api "github.com/travisjeffery/proglog/api/v1"
@@ -14,6 +14,8 @@ import (
 type Replicator struct {
 	DialOptions []grpc.DialOption
 	LocalServer api.LogClient
+
+	logger *zap.Logger
 
 	mu      sync.Mutex
 	servers map[string]chan struct{}
@@ -33,13 +35,13 @@ func (r *Replicator) Join(name, addr string) error {
 		return nil
 	}
 
-	if _, ok := r.servers[addr]; ok {
+	if _, ok := r.servers[name]; ok {
 		// already replicating so skip
 		return nil
 	}
-	r.servers[addr] = make(chan struct{})
+	r.servers[name] = make(chan struct{})
 
-	go r.replicate(addr, r.servers[addr])
+	go r.replicate(addr, r.servers[name])
 
 	return nil
 }
@@ -50,7 +52,7 @@ func (r *Replicator) Join(name, addr string) error {
 func (r *Replicator) replicate(addr string, leave chan struct{}) {
 	cc, err := grpc.Dial(addr, r.DialOptions...)
 	if err != nil {
-		r.err(err)
+		r.logError(err, "failed to dial", addr)
 		return
 	}
 	defer cc.Close()
@@ -64,7 +66,7 @@ func (r *Replicator) replicate(addr string, leave chan struct{}) {
 		},
 	)
 	if err != nil {
-		r.err(err)
+		r.logError(err, "failed to consume", addr)
 		return
 	}
 
@@ -73,7 +75,7 @@ func (r *Replicator) replicate(addr string, leave chan struct{}) {
 		for {
 			recv, err := stream.Recv()
 			if err != nil {
-				r.err(err)
+				r.logError(err, "failed to receive", addr)
 				return
 			}
 			records <- recv.Record
@@ -95,7 +97,7 @@ func (r *Replicator) replicate(addr string, leave chan struct{}) {
 				},
 			)
 			if err != nil {
-				r.err(err)
+				r.logError(err, "failed to produce", addr)
 				return
 			}
 		}
@@ -105,15 +107,15 @@ func (r *Replicator) replicate(addr string, leave chan struct{}) {
 // END: end_add
 
 // START: remove
-func (r *Replicator) Leave(name, addr string) error {
+func (r *Replicator) Leave(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.init()
-	if _, ok := r.servers[addr]; !ok {
+	if _, ok := r.servers[name]; !ok {
 		return nil
 	}
-	close(r.servers[addr])
-	delete(r.servers, addr)
+	close(r.servers[name])
+	delete(r.servers, name)
 	return nil
 }
 
@@ -121,6 +123,9 @@ func (r *Replicator) Leave(name, addr string) error {
 
 // START: init
 func (r *Replicator) init() {
+	if r.logger == nil {
+		r.logger = zap.L().Named("replicator")
+	}
 	if r.servers == nil {
 		r.servers = make(map[string]chan struct{})
 	}
@@ -144,11 +149,16 @@ func (r *Replicator) Close() error {
 	close(r.close)
 	return nil
 }
+
 // END: close
 
 // START: err
-func (r *Replicator) err(err error) {
-	log.Printf("[ERROR] proglog: %v", err)
+func (r *Replicator) logError(err error, msg, addr string) {
+	r.logger.Error(
+		msg,
+		zap.String("addr", addr),
+		zap.Error(err),
+	)
 }
 
 // END: err

@@ -14,8 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var _ api.LogServer = (*grpcServer)(nil)
-
 // START: config_authorizer
 type Config struct {
 	CommitLog  CommitLog
@@ -41,28 +39,36 @@ func newgrpcServer(config *Config) (*grpcServer, error) {
 	return srv, nil
 }
 
+// START: newgrpcserver_before_auth
 // START: newgrpcserver
 func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (
 	*grpc.Server,
 	error,
 ) {
+	// END: newgrpcserver_before_auth
 	opts = append(opts, grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
 			grpc_auth.StreamServerInterceptor(authenticate),
 		)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		grpc_auth.UnaryServerInterceptor(authenticate),
 	)))
-	// END: newgrpcserver_before_auth
+	// START: newgrpcserver_before_auth
 	gsrv := grpc.NewServer(opts...)
 	srv, err := newgrpcServer(config)
 	if err != nil {
 		return nil, err
 	}
-	api.RegisterLogServer(gsrv, srv)
+	api.RegisterLogService(gsrv, &api.LogService{
+		Produce:       srv.Produce,
+		Consume:       srv.Consume,
+		ConsumeStream: srv.ConsumeStream,
+		ProduceStream: srv.ProduceStream,
+	})
 	return gsrv, nil
 }
 
 // END: newgrpcserver
+// END: newgrpcserver_before_auth
 
 // START: request_response
 // START: produce_authorize
@@ -83,6 +89,7 @@ func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (
 	}
 	return &api.ProduceResponse{Offset: offset}, nil
 }
+
 // END: produce_authorize
 
 // START: consume_authorize
@@ -96,13 +103,14 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (
 	); err != nil {
 		return nil, err
 	}
-	// END_HIGHLIGHT	
+	// END_HIGHLIGHT
 	record, err := s.CommitLog.Read(req.Offset)
 	if err != nil {
 		return nil, err
 	}
 	return &api.ConsumeResponse{Record: record}, nil
 }
+
 // END: consume_authorize
 // END: request_response
 
@@ -147,6 +155,7 @@ func (s *grpcServer) ConsumeStream(
 		}
 	}
 }
+
 // END: stream
 
 // START: commitlog

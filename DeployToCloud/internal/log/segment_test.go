@@ -32,7 +32,7 @@ func TestSegment(t *testing.T) {
 
 		got, err := s.Read(off)
 		require.NoError(t, err)
-		require.Equal(t, want, got)
+		require.Equal(t, want.Value, got.Value)
 	}
 
 	_, err = s.Append(want)

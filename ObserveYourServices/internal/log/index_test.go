@@ -21,6 +21,7 @@ func TestIndex(t *testing.T) {
 	require.NoError(t, err)
 	_, _, err = idx.Read(-1)
 	require.Error(t, err)
+	require.Equal(t, f.Name(), idx.Name())
 
 	entries := []struct {
 		Off uint32

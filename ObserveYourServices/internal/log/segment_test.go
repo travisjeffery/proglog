@@ -32,7 +32,7 @@ func TestSegment(t *testing.T) {
 
 		got, err := s.Read(off)
 		require.NoError(t, err)
-		require.Equal(t, want, got)
+		require.Equal(t, want.Value, got.Value)
 	}
 
 	_, err = s.Append(want)
@@ -48,4 +48,10 @@ func TestSegment(t *testing.T) {
 	require.NoError(t, err)
 	// maxed store
 	require.True(t, s.IsMaxed())
+
+	err = s.Remove()
+	require.NoError(t, err)
+	s, err = newSegment(dir, 16, c)
+	require.NoError(t, err)
+	require.False(t, s.IsMaxed())
 }

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	api "github.com/travisjeffery/proglog/api/v1"
 )
@@ -48,7 +48,7 @@ func testAppendRead(t *testing.T, log *Log) {
 
 	read, err := log.Read(off)
 	require.NoError(t, err)
-	require.Equal(t, append, read)
+	require.Equal(t, append.Value, read.Value)
 
 }
 
@@ -90,7 +90,7 @@ func testReader(t *testing.T, log *Log) {
 	read := &api.Record{}
 	err = proto.Unmarshal(b[lenWidth:], read)
 	require.NoError(t,err)
-	require.Equal(t, append, read)
+	require.Equal(t, append.Value, read.Value)
 }
 
 // END: tests

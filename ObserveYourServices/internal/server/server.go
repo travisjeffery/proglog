@@ -18,6 +18,7 @@ import (
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
 	// END_HIGHLIGHT
 
 	"google.golang.org/grpc"
@@ -28,9 +29,6 @@ import (
 )
 
 // END: imports
-
-var _ api.LogServer = (*grpcServer)(nil)
-
 
 type Config struct {
 	CommitLog  CommitLog
@@ -108,7 +106,12 @@ func NewGRPCServer(config *Config, grpcOpts ...grpc.ServerOption) (
 	if err != nil {
 		return nil, err
 	}
-	api.RegisterLogServer(gsrv, srv)
+	api.RegisterLogService(gsrv, &api.LogService{
+		Produce:       srv.Produce,
+		Consume:       srv.Consume,
+		ConsumeStream: srv.ConsumeStream,
+		ProduceStream: srv.ProduceStream,
+	})
 	return gsrv, nil
 }
 

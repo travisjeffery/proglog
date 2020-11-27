@@ -46,8 +46,12 @@ func TestAgent(t *testing.T) {
 		bindAddr := fmt.Sprintf("%s:%d", "127.0.0.1", ports[0])
 		rpcPort := ports[1]
 
-		dataDir, err := ioutil.TempDir("", "server-test-log")
+		dataDir, err := ioutil.TempDir("", "agent-test-log")
 		require.NoError(t, err)
+
+		defer func(dir string) {
+			_ = os.RemoveAll(dir)
+		}(dataDir)
 
 		var startJoinAddrs []string
 		if i != 0 {
@@ -73,10 +77,6 @@ func TestAgent(t *testing.T) {
 	defer func() {
 		for _, agent := range agents {
 			_ = agent.Shutdown()
-			require.NoError(
-				t,
-				os.RemoveAll(agent.Config.DataDir),
-			)
 		}
 	}()
 

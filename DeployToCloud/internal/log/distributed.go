@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/hashicorp/raft"
 
@@ -134,7 +134,7 @@ func (l *DistributedLog) Append(record *api.Record) (uint64, error) {
 	return res.(*api.ProduceResponse).Offset, nil
 }
 
-func (l *DistributedLog) apply(reqType RequestType, req proto.Marshaler) (
+func (l *DistributedLog) apply(reqType RequestType, req proto.Message) (
 	interface{},
 	error,
 ) {
@@ -143,7 +143,7 @@ func (l *DistributedLog) apply(reqType RequestType, req proto.Marshaler) (
 	if err != nil {
 		return nil, err
 	}
-	b, err := req.Marshal()
+	b, err := proto.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (l *fsm) Apply(record *raft.Log) interface{} {
 
 func (l *fsm) applyAppend(b []byte) interface{} {
 	var req api.ProduceRequest
-	err := req.Unmarshal(b)
+	err := proto.Unmarshal(b, &req)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (f *fsm) Restore(r io.ReadCloser) error {
 			return err
 		}
 		record := &api.Record{}
-		if err = record.Unmarshal(buf.Bytes()); err != nil {
+		if err = proto.Unmarshal(buf.Bytes(), record); err != nil {
 			return err
 		}
 		if _, err = f.log.Append(record); err != nil {

@@ -32,9 +32,6 @@ import (
 )
 // END: imports
 
-var _ api.LogServer = (*grpcServer)(nil)
-
-
 // START: config
 type Config struct {
 	CommitLog   CommitLog
@@ -79,7 +76,9 @@ func NewGRPCServer(config *Config, grpcOpts ...grpc.ServerOption) (
 		),
 	}
 
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	trace.ApplyConfig(trace.Config{
+		DefaultSampler: trace.AlwaysSample(),
+	})
 	err := view.Register(ocgrpc.DefaultServerViews...)
 	if err != nil {
 		return nil, err
@@ -89,13 +88,22 @@ func NewGRPCServer(config *Config, grpcOpts ...grpc.ServerOption) (
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				grpc_ctxtags.StreamServerInterceptor(),
-				grpc_zap.StreamServerInterceptor(logger, zapOpts...),
-				grpc_auth.StreamServerInterceptor(authenticate),
-			)), grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_ctxtags.UnaryServerInterceptor(),
-			grpc_zap.UnaryServerInterceptor(logger, zapOpts...),
-			grpc_auth.UnaryServerInterceptor(authenticate),
-		)),
+				grpc_zap.StreamServerInterceptor(
+					logger, zapOpts...,
+				),
+				grpc_auth.StreamServerInterceptor(
+					authenticate,
+				),
+			)), grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				grpc_ctxtags.UnaryServerInterceptor(),
+				grpc_zap.UnaryServerInterceptor(
+					logger, zapOpts...,
+				),
+				grpc_auth.UnaryServerInterceptor(
+					authenticate,
+				),
+			)),
 		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
 	)
 	gsrv := grpc.NewServer(grpcOpts...)
@@ -110,7 +118,13 @@ func NewGRPCServer(config *Config, grpcOpts ...grpc.ServerOption) (
 	if err != nil {
 		return nil, err
 	}
-	api.RegisterLogServer(gsrv, srv)
+	api.RegisterLogService(gsrv, &api.LogService{
+		Produce:       srv.Produce,
+		Consume:       srv.Consume,
+		ConsumeStream: srv.ConsumeStream,
+		ProduceStream: srv.ProduceStream,
+		GetServers: srv.GetServers,
+	})
 	return gsrv, nil
 }
 // END: new

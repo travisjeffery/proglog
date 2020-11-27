@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"net"
 	"sync"
@@ -65,6 +66,7 @@ func New(config Config) (*Agent, error) {
 		shutdowns: make(chan struct{}),
 	}
 	setup := []func() error{
+		a.setupLogger,
 		a.setupMux,
 		// END_HIGHLIGHT
 		a.setupLog,
@@ -80,9 +82,23 @@ func New(config Config) (*Agent, error) {
 	return a, nil
 }
 
+func (a *Agent) setupLogger() error {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return err
+	}
+	zap.ReplaceGlobals(logger)
+	return nil
+}
+
 func (a *Agent) setupMux() error {
+	addr, err := net.ResolveTCPAddr("tcp", a.Config.BindAddr)
+	if err != nil {
+		return err
+	}
 	rpcAddr := fmt.Sprintf(
-		":%d",
+		"%s:%d",
+		addr.IP.String(),
 		a.Config.RPCPort,
 	)
 	ln, err := net.Listen("tcp", rpcAddr)

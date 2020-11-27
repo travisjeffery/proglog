@@ -15,7 +15,7 @@ spec:
       name: {{ include "proglog.fullname" . }}
       labels: {{ include "proglog.labels" . | nindent 8 }}
     spec:
-      # initialContainers...
+      # initContainers...
       # END: initial
       # START: initial_containers
       initContainers:

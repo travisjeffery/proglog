@@ -224,7 +224,8 @@ func testProduceConsume(t *testing.T, clients clients, config *Config) {
 		Offset: produce.Offset,
 	})
 	require.NoError(t, err)
-	require.Equal(t, want, consume.Record)
+	require.Equal(t, want.Value, consume.Record.Value)
+	require.Equal(t, want.Offset, produce.Offset)
 }
 
 // END: produceconsume

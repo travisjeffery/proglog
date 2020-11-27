@@ -35,7 +35,9 @@ type Config struct {
 	StartJoinAddrs []string
 	ACLModelFile   string
 	ACLPolicyFile  string
-	Bootstrap      bool
+	// START: config
+	Bootstrap bool
+	// END: config
 }
 
 func (c Config) RPCAddr() (string, error) {
@@ -46,6 +48,7 @@ func (c Config) RPCAddr() (string, error) {
 	return fmt.Sprintf("%s:%d", host, c.RPCPort), nil
 }
 
+// START: agent
 type Agent struct {
 	Config Config
 
@@ -59,27 +62,35 @@ type Agent struct {
 	shutdownLock sync.Mutex
 }
 
+// END: agent
+
 func New(config Config) (*Agent, error) {
 	a := &Agent{
 		Config:    config,
 		shutdowns: make(chan struct{}),
 	}
+	// START: add_setup_mux
 	setup := []func() error{
+		// START_HIGHLIGHT
 		a.setupMux,
 		// END_HIGHLIGHT
 		a.setupLog,
 		a.setupServer,
 		a.setupMembership,
 	}
-	for i, fn := range setup {
+	// END: add_setup_mux
+	for _, fn := range setup {
 		if err := fn(); err != nil {
 			return nil, err
 		}
 	}
+	// START: new_serve
 	go a.serve()
+	// END: new_serve
 	return a, nil
 }
 
+// START: setup_mux
 func (a *Agent) setupMux() error {
 	rpcAddr := fmt.Sprintf(
 		":%d",
@@ -93,6 +104,9 @@ func (a *Agent) setupMux() error {
 	return nil
 }
 
+// END: setup_mux
+
+// START: setup_log_start
 func (a *Agent) setupLog() error {
 	raftLn := a.mux.Match(func(reader io.Reader) bool {
 		b := make([]byte, 1)
@@ -101,19 +115,17 @@ func (a *Agent) setupLog() error {
 		}
 		return bytes.Compare(b, []byte{byte(log.RaftRPC)}) == 0
 	})
+	// END: setup_log_start
+	// START: setup_log_end
 	logConfig := log.Config{}
 	logConfig.Raft.StreamLayer = log.NewStreamLayer(
 		raftLn,
 		a.Config.ServerTLSConfig,
 		a.Config.PeerTLSConfig,
 	)
-	rpcAddr, err := a.Config.RPCAddr()
-	if err != nil {
-		return err
-	}
-	logConfig.Raft.BindAddr = rpcAddr
 	logConfig.Raft.LocalID = raft.ServerID(a.Config.NodeName)
 	logConfig.Raft.Bootstrap = a.Config.Bootstrap
+	var err error
 	a.log, err = log.NewDistributedLog(
 		a.Config.DataDir,
 		logConfig,
@@ -126,6 +138,8 @@ func (a *Agent) setupLog() error {
 	}
 	return nil
 }
+
+// END: setup_log_end
 
 func (a *Agent) setupServer() error {
 	authorizer := auth.New(
@@ -147,6 +161,7 @@ func (a *Agent) setupServer() error {
 	if err != nil {
 		return err
 	}
+	// START: setup_server
 	grpcLn := a.mux.Match(cmux.Any())
 	go func() {
 		if err := a.server.Serve(grpcLn); err != nil {
@@ -154,8 +169,10 @@ func (a *Agent) setupServer() error {
 		}
 	}()
 	return err
+	// END: setup_server
 }
 
+// START: setup_membership
 func (a *Agent) setupMembership() error {
 	rpcAddr, err := a.Config.RPCAddr()
 	if err != nil {
@@ -172,6 +189,9 @@ func (a *Agent) setupMembership() error {
 	return err
 }
 
+// END: setup_membership
+
+// START: serve
 func (a *Agent) serve() error {
 	if err := a.mux.Serve(); err != nil {
 		_ = a.Shutdown()
@@ -179,6 +199,8 @@ func (a *Agent) serve() error {
 	}
 	return nil
 }
+
+// END: serve
 
 func (a *Agent) Shutdown() error {
 	a.shutdownLock.Lock()

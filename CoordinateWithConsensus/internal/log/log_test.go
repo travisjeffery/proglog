@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	api "github.com/travisjeffery/proglog/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestLog(t *testing.T) {
@@ -49,16 +49,19 @@ func testAppendRead(t *testing.T, log *Log) {
 
 	read, err := log.Read(off)
 	require.NoError(t, err)
-	require.Equal(t, append, read)
+	require.Equal(t, append.Value, read.Value)
 
 }
 
+// START: test
 func testOutOfRangeErr(t *testing.T, log *Log) {
 	read, err := log.Read(1)
 	require.Nil(t, read)
 	apiErr := err.(api.ErrOffsetOutOfRange)
 	require.Equal(t, uint64(1), apiErr.Offset)
 }
+
+// END: test
 
 func testInitExisting(t *testing.T, o *Log) {
 	append := &api.Record{
@@ -103,7 +106,7 @@ func testReader(t *testing.T, log *Log) {
 	read := &api.Record{}
 	err = proto.Unmarshal(b[lenWidth:], read)
 	require.NoError(t, err)
-	require.Equal(t, append, read)
+	require.Equal(t, append.Value, read.Value)
 }
 
 func testTruncate(t *testing.T, log *Log) {

@@ -7,8 +7,8 @@ package twitter
 type Tweet struct {
 	Message string `protobuf:"bytes,1,opt,name=message,proto3"
 json:"message,omitempty"`
-
-	// Note: Protobuf generates some fields and methods
-	// for it to use internally, not including them for brevity.
+	// Note: Protobuf generates internal fields and methods
+	// I haven't included for brevity.
 }
+
 // END:twitter

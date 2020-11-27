@@ -4,7 +4,7 @@ import (
 	// ...
 	// END: flag
 	"context"
-	
+
 	"io/ioutil"
 	"net"
 	"os"
@@ -20,7 +20,9 @@ import (
 
 	// START: imports
 	"flag"
+
 	"go.opencensus.io/examples/exporter"
+
 	// END: imports
 
 	api "github.com/travisjeffery/proglog/api/v1"
@@ -45,6 +47,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(m.Run())
 }
+
 // END: flag
 
 func TestServer(t *testing.T) {
@@ -66,7 +69,7 @@ func TestServer(t *testing.T) {
 				config,
 				teardown := setupTest(t, nil)
 			defer teardown()
-			fn(t, rootClient, nobodyClient, config)			
+			fn(t, rootClient, nobodyClient, config)
 		})
 	}
 }
@@ -131,7 +134,7 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	require.NoError(t, err)
 
 	authorizer := auth.New(config.ACLModelFile, config.ACLPolicyFile)
-	
+
 	// START: telemetry
 	var telemetryExporter *exporter.LogExporter
 	if *debug {
@@ -144,13 +147,13 @@ func setupTest(t *testing.T, fn func(*Config)) (
 		t.Logf("traces log file: %s", tracesLogFile.Name())
 
 		telemetryExporter, err = exporter.NewLogExporter(exporter.Options{
-			MetricsLogFile: metricsLogFile.Name(),
-			TracesLogFile: tracesLogFile.Name(),
-			ReportingInterval: time.Second,		
+			MetricsLogFile:    metricsLogFile.Name(),
+			TracesLogFile:     tracesLogFile.Name(),
+			ReportingInterval: time.Second,
 		})
 		require.NoError(t, err)
 		err = telemetryExporter.Start()
-		require.NoError(t, err)		
+		require.NoError(t, err)
 	}
 	// END: telemetry
 
@@ -178,7 +181,7 @@ func setupTest(t *testing.T, fn func(*Config)) (
 		// START_HIGHLIGHT
 		if telemetryExporter != nil {
 			time.Sleep(1500 * time.Millisecond)
-			telemetryExporter.Stop()		
+			telemetryExporter.Stop()
 			telemetryExporter.Close()
 		}
 		// END_HIGHLIGHT
@@ -205,7 +208,8 @@ func testProduceConsume(t *testing.T, client, _ api.LogClient, config *Config) {
 		Offset: produce.Offset,
 	})
 	require.NoError(t, err)
-	require.Equal(t, want, consume.Record)
+	require.Equal(t, want.Value, consume.Record.Value)
+	require.Equal(t, want.Offset, consume.Record.Offset)
 }
 
 func testConsumePastBoundary(
@@ -279,10 +283,13 @@ func testProduceConsumeStream(
 		)
 		require.NoError(t, err)
 
-		for _, record := range records {
+		for i, record := range records {
 			res, err := stream.Recv()
 			require.NoError(t, err)
-			require.Equal(t, res.Record, record)
+			require.Equal(t, res.Record, &api.Record{
+				Value:  record.Value,
+				Offset: uint64(i),
+			})
 		}
 	}
 }

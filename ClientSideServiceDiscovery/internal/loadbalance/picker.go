@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/balancer/base"
 )
 
-var _ base.V2PickerBuilder = (*Picker)(nil)
+var _ base.PickerBuilder = (*Picker)(nil)
 
 type Picker struct {
 	mu        sync.RWMutex
@@ -19,7 +19,7 @@ type Picker struct {
 	current   uint64
 }
 
-func (p *Picker) Build(buildInfo base.PickerBuildInfo) balancer.V2Picker {
+func (p *Picker) Build(buildInfo base.PickerBuildInfo) balancer.Picker {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var followers []balancer.SubConn
@@ -41,7 +41,7 @@ func (p *Picker) Build(buildInfo base.PickerBuildInfo) balancer.V2Picker {
 // END: picker_builder
 
 // START: picker_picker
-var _ balancer.V2Picker = (*Picker)(nil)
+var _ balancer.Picker = (*Picker)(nil)
 
 func (p *Picker) Pick(info balancer.PickInfo) (
 	balancer.PickResult, error) {
@@ -53,6 +53,9 @@ func (p *Picker) Pick(info balancer.PickInfo) (
 		result.SubConn = p.leader
 	} else if strings.Contains(info.FullMethodName, "Consume") {
 		result.SubConn = p.nextFollower()
+	}
+	if result.SubConn == nil {
+		return result, balancer.ErrNoSubConnAvailable
 	}
 	return result, nil
 }
@@ -69,7 +72,7 @@ func (p *Picker) nextFollower() balancer.SubConn {
 // START: picker_register
 func init() {
 	balancer.Register(
-		base.NewBalancerBuilderV2(Name, &Picker{}, base.Config{}),
+		base.NewBalancerBuilder(Name, &Picker{}, base.Config{}),
 	)
 }
 

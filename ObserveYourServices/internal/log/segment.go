@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/gogo/protobuf/proto"
 	api "github.com/travisjeffery/proglog/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 type segment struct {
@@ -89,12 +89,12 @@ func (s *segment) Read(off uint64) (*api.Record, error) {
 	if err != nil {
 		return nil, err
 	}
-	b, err := s.store.ReadAt(pos)
+	p, err := s.store.Read(pos)
 	if err != nil {
 		return nil, err
 	}
 	record := &api.Record{}
-	err = proto.Unmarshal(b, record)
+	err = proto.Unmarshal(p, record)
 	return record, err
 }
 
@@ -109,17 +109,33 @@ func (s *segment) IsMaxed() bool {
 // END: ismaxed
 
 // START: close
-func (s *segment) Close() (err error) {
-	if err = s.store.Close(); err != nil {
+func (s *segment) Close() error {
+	if err := s.index.Close(); err != nil {
 		return err
 	}
-	if err = s.index.Close(); err != nil {
+	if err := s.store.Close(); err != nil {
 		return err
 	}
 	return nil
 }
 
 // END: close
+
+// START: remove
+func (s *segment) Remove() error {
+	if err := s.Close(); err != nil {
+		return err
+	}
+	if err := os.Remove(s.index.Name()); err != nil {
+		return err
+	}
+	if err := os.Remove(s.store.Name()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// END: remove
 
 // START: nearestmultiple
 func nearestMultiple(j, k uint64) uint64 {

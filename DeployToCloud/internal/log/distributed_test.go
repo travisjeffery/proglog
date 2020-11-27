@@ -39,6 +39,7 @@ func TestMultipleNodes(t *testing.T) {
 		config.Raft.ElectionTimeout = 50 * time.Millisecond
 		config.Raft.LeaderLeaseTimeout = 50 * time.Millisecond
 		config.Raft.CommitTimeout = 5 * time.Millisecond
+		config.Raft.BindAddr = ln.Addr().String()
 		// END: distributed_log_test_intro
 
 		// START: distributed_log_test_cont
@@ -51,7 +52,9 @@ func TestMultipleNodes(t *testing.T) {
 		require.NoError(t, err)
 
 		if i != 0 {
-			err = logs[0].Join(fmt.Sprintf("%d", i), ln.Addr().String())
+			err = logs[0].Join(
+				fmt.Sprintf("%d", i), ln.Addr().String(),
+			)
 			require.NoError(t, err)
 		} else {
 			err = l.WaitForLeader(3 * time.Second)
@@ -78,7 +81,7 @@ func TestMultipleNodes(t *testing.T) {
 					return false
 				}
 				record.Offset = off
-				if !reflect.DeepEqual(got, record) {
+				if !reflect.DeepEqual(got.Value, record.Value) {
 					return false
 				}
 			}
@@ -121,10 +124,8 @@ func TestMultipleNodes(t *testing.T) {
 
 	record, err = logs[2].Read(off)
 	require.NoError(t, err)
-	require.Equal(t, &api.Record{
-		Value:  []byte("third"),
-		Offset: off,
-	}, record) //<label id="second_leave" />
+	require.Equal(t, []byte("third"), record.Value)
+	require.Equal(t, off, record.Offset) //<label id="second_leave" />
 }
 
 // END: distributed_log_test_leave

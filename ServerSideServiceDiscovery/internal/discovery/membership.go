@@ -2,8 +2,9 @@
 package discovery
 
 import (
-	"log"
 	"net"
+
+	"go.uber.org/zap"
 
 	"github.com/hashicorp/serf/serf"
 )
@@ -13,12 +14,14 @@ type Membership struct {
 	handler Handler
 	serf    *serf.Serf
 	events  chan serf.Event
+	logger  *zap.Logger
 }
 
 func New(handler Handler, config Config) (*Membership, error) {
 	c := &Membership{
 		Config:  config,
 		handler: handler,
+		logger:  zap.L().Named("membership"),
 	}
 	if err := c.setupSerf(); err != nil {
 		return nil, err
@@ -67,7 +70,7 @@ func (m *Membership) setupSerf() (err error) {
 // START: handler
 type Handler interface {
 	Join(name, addr string) error
-	Leave(name, addr string) error
+	Leave(name string) error
 }
 
 // END: handler
@@ -99,23 +102,15 @@ func (m *Membership) handleJoin(member serf.Member) {
 		member.Name,
 		member.Tags["rpc_addr"],
 	); err != nil {
-		log.Printf(
-			"[ERROR] proglog: failed to join: %s %s",
-			member.Name,
-			member.Tags["rpc_addr"],
-		)
+		m.logError(err, "failed to join", member)
 	}
 }
 
 func (m *Membership) handleLeave(member serf.Member) {
 	if err := m.handler.Leave(
 		member.Name,
-		member.Tags["rpc_addr"],
 	); err != nil {
-		log.Printf(
-			"[ERROR] proglog: failed to leave: %s",
-			member.Name,
-		)
+		m.logError(err, "failed to leave", member)
 	}
 }
 
@@ -132,6 +127,15 @@ func (m *Membership) Members() []serf.Member {
 
 func (m *Membership) Leave() error {
 	return m.serf.Leave()
+}
+
+func (m *Membership) logError(err error, msg string, member serf.Member) {
+	m.logger.Error(
+		msg,
+		zap.Error(err),
+		zap.String("name", member.Name),
+		zap.String("rpc_addr", member.Tags["rpc_addr"]),
+	)
 }
 
 // END: rest

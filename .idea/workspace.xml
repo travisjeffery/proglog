@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="5cd13305-70fc-4f67-aebe-54e11af9c6fe" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/ClientSideServiceDiscovery/internal/loadbalance/picker.go" beforeDir="false" afterPath="$PROJECT_DIR$/ClientSideServiceDiscovery/internal/loadbalance/picker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ClientSideServiceDiscovery/internal/loadbalance/picker_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/ClientSideServiceDiscovery/internal/loadbalance/picker_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DeployLocally/internal/loadbalance/picker.go" beforeDir="false" afterPath="$PROJECT_DIR$/DeployLocally/internal/loadbalance/picker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DeployLocally/internal/loadbalance/picker_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/DeployLocally/internal/loadbalance/picker_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DeployToCloud/internal/loadbalance/picker.go" beforeDir="false" afterPath="$PROJECT_DIR$/DeployToCloud/internal/loadbalance/picker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DeployToCloud/internal/loadbalance/picker_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/DeployToCloud/internal/loadbalance/picker_test.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" path="$USER_HOME$/.goenv/versions/1.15.2" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1jfI98Lp4sN8vQzpj5GMzzB7mNd" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+  </component>
+  <component name="RunManager" selected="Go Test.go test loadbalance">
+    <configuration name="go test code" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+      <module name="code" />
+      <working_directory value="$PROJECT_DIR$" />
+      <go_parameters value="-i" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test loadbalance" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="code" />
+      <working_directory value="$PROJECT_DIR$/ClientSideServiceDiscovery/internal/loadbalance" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <directory value="$PROJECT_DIR$/ClientSideServiceDiscovery/internal/loadbalance" />
+      <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Test.go test code" />
+      <item itemvalue="Go Test.go test loadbalance" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.go test loadbalance" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="1418" y="799" key="#GOROOT" timestamp="1605832009856">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1418" y="799" key="#GOROOT/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605832009856" />
+    <state x="1418" y="803" width="400" height="322" key="#Go_Modules" timestamp="1604188768331">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1418" y="803" width="400" height="322" key="#Go_Modules/2160.0.1920.1080/0.0.1080.1060/1080.0.1080.1920@1080.0.1080.1920" timestamp="1604188768331" />
+    <state x="1082" y="579" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1605834140420">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1082" y="579" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605834140420" />
+    <state width="1034" height="564" key="GridCell.Tab.0.bottom" timestamp="1605839638626">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1034" height="564" key="GridCell.Tab.0.bottom/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605839638626" />
+    <state width="1034" height="564" key="GridCell.Tab.0.center" timestamp="1605839638626">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1034" height="564" key="GridCell.Tab.0.center/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605839638626" />
+    <state width="1034" height="564" key="GridCell.Tab.0.left" timestamp="1605839638626">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1034" height="564" key="GridCell.Tab.0.left/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605839638626" />
+    <state width="1034" height="564" key="GridCell.Tab.0.right" timestamp="1605839638626">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1034" height="564" key="GridCell.Tab.0.right/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605839638626" />
+    <state x="41" y="494" key="SettingsEditor" timestamp="1605830010635">
+      <screen x="0" y="0" width="1080" height="1875" />
+    </state>
+    <state x="41" y="494" key="SettingsEditor/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@0.0.1080.1875" timestamp="1605830010635" />
+    <state x="1283" y="425" key="search.everywhere.popup" timestamp="1605830776472">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1283" y="425" key="search.everywhere.popup/0.0.1080.1875/1080.0.1080.1920/2160.0.1080.1920@1080.0.1080.1920" timestamp="1605830776472" />
+  </component>
+</project>

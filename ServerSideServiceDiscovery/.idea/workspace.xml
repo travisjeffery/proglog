@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="28edc7cc-e0a3-4fb4-9085-33531d002594" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" path="$USER_HOME$/.goenv/versions/1.13.6" />
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1Y0VwoqFW79NLyhGipA0u0zZ0fy" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/internal" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/internal" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/internal/log" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go Test.go test agent">
+    <configuration name="agent_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="ServerSideServiceDiscovery" />
+      <working_directory value="$PROJECT_DIR$/internal/agent" />
+      <framework value="gotest" />
+      <kind value="FILE" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/internal/agent/agent_test.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test ServerSideServiceDiscovery" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+      <module name="ServerSideServiceDiscovery" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test agent" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="ServerSideServiceDiscovery" />
+      <working_directory value="$PROJECT_DIR$/internal/agent" />
+      <go_parameters value="-race" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/agent" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test log" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="ServerSideServiceDiscovery" />
+      <working_directory value="$PROJECT_DIR$/internal/log" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/log" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test membership" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="ServerSideServiceDiscovery" />
+      <working_directory value="$PROJECT_DIR$/internal/membership" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/membership" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test server" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="ServerSideServiceDiscovery" />
+      <working_directory value="$PROJECT_DIR$/internal/server" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/travisjeffery/proglog" />
+      <directory value="$PROJECT_DIR$/internal/server" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Test.go test ServerSideServiceDiscovery" />
+      <item itemvalue="Go Test.agent_test.go" />
+      <item itemvalue="Go Test.go test agent" />
+      <item itemvalue="Go Test.go test log" />
+      <item itemvalue="Go Test.go test membership" />
+      <item itemvalue="Go Test.go test server" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.go test agent" />
+        <item itemvalue="Go Test.go test membership" />
+        <item itemvalue="Go Test.go test log" />
+        <item itemvalue="Go Test.go test server" />
+        <item itemvalue="Go Test.agent_test.go" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+    <environment>
+      <map>
+        <entry key="GOPROXY" value="direct" />
+      </map>
+    </environment>
+    <proxy>direct</proxy>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="1218" y="628" width="800" height="674" key="#GOROOT" timestamp="1582079776275">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1218" y="628" width="800" height="674" key="#GOROOT/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1582079776275" />
+    <state x="1218" y="628" width="800" height="674" key="#Go_Modules_(vgo)" timestamp="1582079856637">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1218" y="628" width="800" height="674" key="#Go_Modules_(vgo)/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1582079856637" />
+    <state x="1082" y="625" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583731783961">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1082" y="625" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583731783961" />
+    <state x="1406" y="725" width="424" height="481" key="FileChooserDialogImpl" timestamp="1583231480173">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1406" y="725" width="424" height="481" key="FileChooserDialogImpl/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583231480173" />
+    <state width="1036" height="575" key="GridCell.Tab.0.bottom" timestamp="1583803252250">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="565" key="GridCell.Tab.0.bottom/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1582312334489" />
+    <state width="1036" height="575" key="GridCell.Tab.0.bottom/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803252250" />
+    <state width="1036" height="575" key="GridCell.Tab.0.center" timestamp="1583803252250">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="565" key="GridCell.Tab.0.center/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1582312334489" />
+    <state width="1036" height="575" key="GridCell.Tab.0.center/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803252250" />
+    <state width="1036" height="575" key="GridCell.Tab.0.left" timestamp="1583803252250">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="565" key="GridCell.Tab.0.left/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1582312334489" />
+    <state width="1036" height="575" key="GridCell.Tab.0.left/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803252250" />
+    <state width="1036" height="575" key="GridCell.Tab.0.right" timestamp="1583803252250">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state width="1036" height="565" key="GridCell.Tab.0.right/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@0.0.1080.1890" timestamp="1582312334489" />
+    <state width="1036" height="575" key="GridCell.Tab.0.right/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583803252250" />
+    <state x="1119" y="602" width="1001" height="727" key="SettingsEditor" timestamp="1584230649410">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1119" y="602" width="1001" height="727" key="SettingsEditor/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1584230649410" />
+    <state x="1297" y="691" width="790" height="544" key="find.popup" timestamp="1584229913050">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1297" y="691" width="790" height="544" key="find.popup/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1584229913050" />
+    <state x="1368" y="586" width="500" height="759" key="refactoring.ChangeSignatureDialog" timestamp="1583228175482">
+      <screen x="1080" y="0" width="1080" height="1920" />
+    </state>
+    <state x="1368" y="586" width="500" height="759" key="refactoring.ChangeSignatureDialog/0.0.1080.1890/1080.0.1080.1920/2160.0.1920.1080@1080.0.1080.1920" timestamp="1583228175482" />
+  </component>
+</project>

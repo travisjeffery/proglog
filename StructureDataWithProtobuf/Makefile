@@ -1,7 +1,8 @@
 compile:
 	protoc api/v1/*.proto \
-		--gogo_out=\
-Mgogoproto/gogo.proto=github.com/gogo/protobuf/proto:. \
-		--proto_path=\
-$$(go list -f '{{ .Dir }}' -m github.com/gogo/protobuf) \
+		--go_out=. \
+		--go_opt=paths=source_relative \
 		--proto_path=.
+
+test:
+	go test -race ./...

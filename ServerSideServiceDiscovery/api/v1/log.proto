@@ -2,19 +2,18 @@ syntax = "proto3";
 
 package log.v1;
 
-import "gogoproto/gogo.proto";
+option go_package = "github.com/travisjeffery/api/log_v1";
 
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-
+// START: service
 service Log {
   rpc Produce(ProduceRequest) returns (ProduceResponse) {}
   rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}
   rpc ConsumeStream(ConsumeRequest) returns (stream ConsumeResponse) {}
   rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse) {}
 }
+// END: service
 
+// START: apis
 message ProduceRequest  {
   Record record = 1;
 }
@@ -30,6 +29,7 @@ message ConsumeRequest {
 message ConsumeResponse {
   Record record = 2;
 }
+// END: apis
 
 message Record {
   bytes value = 1;

@@ -4,15 +4,15 @@ package log
 import (
 	"bytes"
 	"crypto/tls"
-	"io"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/hashicorp/raft"
 
@@ -160,7 +160,7 @@ func (l *DistributedLog) Append(record *api.Record) (uint64, error) {
 // END: append
 
 // START: apply
-func (l *DistributedLog) apply(reqType RequestType, req proto.Marshaler) (
+func (l *DistributedLog) apply(reqType RequestType, req proto.Message) (
 	interface{},
 	error,
 ) {
@@ -169,7 +169,7 @@ func (l *DistributedLog) apply(reqType RequestType, req proto.Marshaler) (
 	if err != nil {
 		return nil, err
 	}
-	b, err := req.Marshal()
+	b, err := proto.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (l *fsm) Apply(record *raft.Log) interface{} {
 
 func (l *fsm) applyAppend(b []byte) interface{} {
 	var req api.ProduceRequest
-	err := req.Unmarshal(b)
+	err := proto.Unmarshal(b, &req)
 	if err != nil {
 		return err
 	}
@@ -310,7 +310,6 @@ func (f *fsm) Snapshot() (raft.FSMSnapshot, error) {
 	return &snapshot{reader: r}, nil
 }
 
-
 var _ raft.FSMSnapshot = (*snapshot)(nil)
 
 type snapshot struct {
@@ -326,10 +325,11 @@ func (s *snapshot) Persist(sink raft.SnapshotSink) error {
 }
 
 func (s *snapshot) Release() {}
+
 // END: fsm_snapshot
 
 // START: fsm_restore
-func (f *fsm) Restore(r io.ReadCloser) error {	
+func (f *fsm) Restore(r io.ReadCloser) error {
 	b := make([]byte, lenWidth)
 	var buf bytes.Buffer
 	for i := 0; ; i++ {
@@ -344,7 +344,7 @@ func (f *fsm) Restore(r io.ReadCloser) error {
 			return err
 		}
 		record := &api.Record{}
-		if err = record.Unmarshal(buf.Bytes()); err != nil {
+		if err = proto.Unmarshal(buf.Bytes(), record); err != nil {
 			return err
 		}
 		if i == 0 {
@@ -360,6 +360,7 @@ func (f *fsm) Restore(r io.ReadCloser) error {
 	}
 	return nil
 }
+
 // END: fsm_restore
 
 // START: log_store_intro

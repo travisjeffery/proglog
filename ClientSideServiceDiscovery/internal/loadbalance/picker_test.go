@@ -14,6 +14,24 @@ import (
 	"github.com/travisjeffery/proglog/internal/loadbalance"
 )
 
+func TestPickerNoSubConnAvailable(t *testing.T) {
+	picker := &loadbalance.Picker{}
+	for _, method := range []string{
+		"/log.vX.Log/Produce",
+		"/log.vX.Log/Consume",
+	} {
+		info := balancer.PickInfo{
+			FullMethodName: method,
+		}
+		result, err := picker.Pick(info)
+		require.Equal(t, balancer.ErrNoSubConnAvailable, err)
+		require.Nil(t, result.SubConn)
+	}
+}
+
+// END: start
+
+// START: next
 func TestPickerProducesToLeader(t *testing.T) {
 	picker, subConns := setupTest()
 	info := balancer.PickInfo{
@@ -38,7 +56,7 @@ func TestPickerConsumesFromFollowers(t *testing.T) {
 	}
 }
 
-// END: start
+// END: next
 
 // START: end
 func setupTest() (*loadbalance.Picker, []*subConn) {

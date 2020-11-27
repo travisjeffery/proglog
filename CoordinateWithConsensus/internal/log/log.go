@@ -26,6 +26,7 @@ type Log struct {
 
 // END: begin
 
+
 // START: newlog
 func NewLog(dir string, c Config) (*Log, error) {
 	if c.Segment.MaxStoreBytes == 0 {
@@ -100,7 +101,7 @@ func (l *Log) Read(off uint64) (*api.Record, error) {
 	defer l.mu.RUnlock()
 	var s *segment
 	for _, segment := range l.segments {
-		if segment.baseOffset <= off && off < segment.nextOffset  {
+		if segment.baseOffset <= off && off < segment.nextOffset {
 			s = segment
 			break
 		}
@@ -202,7 +203,7 @@ func (l *Log) Reader() io.Reader {
 	readers := make([]io.Reader, len(l.segments))
 	for i, segment := range l.segments {
 		readers[i] = &originReader{segment.store, 0}
-	}	
+	}
 	return io.MultiReader(readers...)
 }
 

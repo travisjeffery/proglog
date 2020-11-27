@@ -98,3 +98,9 @@ func (i *index) Write(off uint32, pos uint64) error {
 }
 
 // END: write
+
+// START: name
+func (i *index) Name() string {
+	return i.file.Name()
+}
+// END: name

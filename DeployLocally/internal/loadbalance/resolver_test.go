@@ -78,7 +78,7 @@ func TestResolver(t *testing.T) {
 	require.Equal(t, wantState, conn.state)
 
 	conn.state.Addresses = nil
-	r.ResolveNow(resolver.ResolveNowOption{})
+	r.ResolveNow(resolver.ResolveNowOptions{})
 	require.Equal(t, wantState, conn.state)
 }
 

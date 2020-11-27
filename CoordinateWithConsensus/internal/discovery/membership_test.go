@@ -1,3 +1,4 @@
+// START: start
 package discovery_test
 
 import (
@@ -12,9 +13,9 @@ import (
 )
 
 func TestMembership(t *testing.T) {
-	m, handler := setupMembership(t, nil)
-	m, _ = setupMembership(t, m)
-	m, _ = setupMembership(t, m)
+	m, handler := setupMember(t, nil)
+	m, _ = setupMember(t, m)
+	m, _ = setupMember(t, m)
 
 	require.Eventually(t, func() bool {
 		return 2 == len(handler.joins) &&
@@ -34,7 +35,12 @@ func TestMembership(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("%d", 2), <-handler.leaves)
 }
 
-func setupMembership(t *testing.T, members []*Membership) ([]*Membership, *handler) {
+// END: start
+
+// START: setup
+func setupMember(t *testing.T, members []*Membership) (
+	[]*Membership, *handler,
+) {
 	id := len(members)
 	ports := dynaport.Get(1)
 	addr := fmt.Sprintf("%s:%d", "127.0.0.1", ports[0])
@@ -61,6 +67,9 @@ func setupMembership(t *testing.T, members []*Membership) ([]*Membership, *handl
 	return members, h
 }
 
+// END: setup
+
+// START: handler
 type handler struct {
 	joins  chan map[string]string
 	leaves chan string
@@ -82,3 +91,5 @@ func (h *handler) Leave(id string) error {
 	}
 	return nil
 }
+
+// END: handler

@@ -83,7 +83,7 @@ func TestMultipleNodes(t *testing.T) {
 					return false
 				}
 				record.Offset = off
-				if !reflect.DeepEqual(got, record) {
+				if !reflect.DeepEqual(got.Value, record.Value) {
 					return false
 				}
 			}
@@ -111,10 +111,8 @@ func TestMultipleNodes(t *testing.T) {
 
 	record, err = logs[2].Read(off)
 	require.NoError(t, err)
-	require.Equal(t, &api.Record{
-		Value:  []byte("third"),
-		Offset: off,
-	}, record)
+	require.Equal(t, []byte("third"), record.Value)
+	require.Equal(t, off, record.Offset)
 }
 
 // END: distributed_log_test_leave

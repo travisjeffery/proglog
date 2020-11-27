@@ -2,11 +2,7 @@ syntax = "proto3";
 
 package log.v1;
 
-import "gogoproto/gogo.proto";
-
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.sizer_all) = true;
+option go_package = "github.com/travisjeffery/api/log_v1";
 
 // START: service
 service Log {

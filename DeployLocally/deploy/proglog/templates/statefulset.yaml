@@ -35,7 +35,7 @@ spec:
                 {{.Values.serfPort}}"
             $([ $ID != 0 ] && echo 'start-join-addrs: \
               "proglog-0.proglog.{{.Release.Namespace}}.svc.cluster.local:\
-                {{.Values.serfPort}}"')
+                {{.Values.serfPort}}"' )
             bootstrap: $([ $ID = 0 ] && echo true || echo false )            
             EOD   
         volumeMounts:
